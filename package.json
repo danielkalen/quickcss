@@ -1,0 +1,55 @@
+{
+  "name": "quickcss",
+  "version": "1.0.0",
+  "description": "Fast & light CSS styling",
+  "main": "dist/quickcss.pretty.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "postversion": "echo \\'$(json -f package.json version)\\' > .config/.version.coffee && npm run build",
+    "test": "open test/testrunner.html",
+    "test:karma": "karma start .config/karma.conf.coffee",
+    "test:phantom": "karma start --single-run --browsers PhantomJS .config/karma.conf.coffee",
+    "test:chrome": "karma start --browsers Chrome .config/karma.conf.coffee",
+    "build": "npm run compile && npm run super-minify",
+    "compile": "npm run compile:js && npm run compile:test",
+    "compile:js": "foreach -g 'src/*.coffee' -x 'simplyimport -i {{path}} | coffee -b -s -c > dist/{{name}}.pretty.js && uglifyjs dist/{{name}}.pretty.js -m -c keep_fargs,unused=false -o dist/{{name}}.js'",
+    "compile:test": "simplyimport -i test/test.coffee | coffee -b -c -s > test/test.js",
+    "super-minify": "closure-service dist/quickcss.pretty.js > dist/quickcss.js",
+    "watch": "npm run watch:js & npm run watch:test",
+    "watch:js": "simplywatch -g 'src/*.coffee' -x 'npm run compile:js -s'",
+    "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run compile:test -s'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielkalen/quickcss.git"
+  },
+  "author": "danielkalen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danielkalen/quickcss/issues"
+  },
+  "homepage": "https://github.com/danielkalen/quickcss#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "closure-compiler-service": "^0.6.1",
+    "coffee-script": "^1.12.2",
+    "foreach-cli": "^1.6.1",
+    "json": "^9.0.4",
+    "karma": "^1.4.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-coverage": "^1.1.1",
+    "karma-firefox-launcher": "^1.0.0",
+    "karma-mocha": "^1.3.0",
+    "karma-mocha-reporter": "^2.2.1",
+    "karma-opera-launcher": "^1.0.0",
+    "karma-phantomjs-launcher": "^1.0.2",
+    "karma-safari-launcher": "^1.0.0",
+    "mocha": "^3.2.0",
+    "phantomjs-prebuilt": "^2.1.14",
+    "simplyimport": "^3.2.1",
+    "simplywatch": "^2.4.4"
+  }
+}
