@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Fast & light CSS styling",
   "main": "dist/quickcss.pretty.js",
+  "browser": {
+    "./src": "src/quickcss.coffee"
+  },
   "directories": {
     "test": "test"
   },
