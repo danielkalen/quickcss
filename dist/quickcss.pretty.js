@@ -83,7 +83,7 @@
   QuickCss.version = (function(_this) {
     return function() {};
   })(this)();
-  '1.0.0';
+  '1.0.1';
 
   /* istanbul ignore next */
   if ((typeof exports !== "undefined" && exports !== null ? exports.module : void 0) != null) {
