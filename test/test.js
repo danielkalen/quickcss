@@ -85,7 +85,7 @@ suite("QuickCss", function() {
       expect(divs[0].style.height).to.equal('12px');
       return expect(divs[0].style.opacity).to.equal('0.8');
     });
-    return test("An iterable collection of elements can be passed along with a style object", function() {
+    test("An iterable collection of elements can be passed along with a style object", function() {
       Css(divs, {
         width: '32px',
         height: '99px'
@@ -96,6 +96,16 @@ suite("QuickCss", function() {
       expect(divs[0].style.height).to.equal('99px');
       expect(divs[1].style.height).to.equal('99px');
       return expect(divs[2].style.height).to.equal('99px');
+    });
+    test("Kebab-cased properties will be transformed to camel-case", function() {
+      Css(divs[0], 'margin-top', '10px');
+      expect(divs[0].style.marginTop).to.equal('10px');
+      return expect(styles[0].marginTop).to.equal('10px');
+    });
+    return test("Invalid properties will be ignored", function() {
+      Css(divs[1], 'topMargin', '25px');
+      expect(divs[0].style.topMargin).not.to.exist;
+      return expect(styles[0].topMargin).not.to.exist;
     });
   });
 });

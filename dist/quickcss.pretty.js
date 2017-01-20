@@ -44,6 +44,8 @@
       for (i = 0, len = POSSIBLE_PREFIXES.length; i < len; i++) {
         prefix = POSSIBLE_PREFIXES[i];
         propertyPrefixed = "" + prefix + propertyTitled;
+
+        /* istanbul ignore next */
         if (this.isPropSupported(propertyPrefixed)) {
           return propertyPrefixed;
         }

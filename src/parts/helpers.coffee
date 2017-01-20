@@ -29,6 +29,7 @@ helpers.normalizeProperty = (property)->
 		
 		for prefix in POSSIBLE_PREFIXES
 			propertyPrefixed = "#{prefix}#{propertyTitled}"
+			### istanbul ignore next ###
 			return propertyPrefixed if @isPropSupported(propertyPrefixed)
 
 helpers.normalizeValue = (property, value)->

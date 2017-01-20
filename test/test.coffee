@@ -83,6 +83,21 @@ suite "QuickCss", ()->
 			expect(divs[2].style.height).to.equal '99px'
 
 
+		test "Kebab-cased properties will be transformed to camel-case", ()->
+			Css divs[0], 'margin-top', '10px'
+
+			expect(divs[0].style.marginTop).to.equal '10px'
+			expect(styles[0].marginTop).to.equal '10px'
+
+
+		test "Invalid properties will be ignored", ()->
+			Css divs[1], 'topMargin', '25px'
+
+			expect(divs[0].style.topMargin).not.to.exist
+			expect(styles[0].topMargin).not.to.exist
+
+
+
 
 
 
