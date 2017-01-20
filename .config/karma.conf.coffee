@@ -4,16 +4,16 @@ module.exports = (config)-> config.set
 	browserConsoleLogOptions: level:'log', terminal:true
 	frameworks: ['mocha', 'chai']
 	files: [
-		'dist/transitioner.pretty.js'
-		'test/bower_components/bluebird/js/browser/bluebird.js'
-		'test/bower_components/jquery/dist/jquery.min.js'
+		'dist/quickcss.pretty.js'
+		'node_modules/bluebird/js/browser/bluebird.js'
+		'node_modules/jquery/dist/jquery.min.js'
 		'test/test.js'
 	]
 	exclude: [
 		'**/*.git'
 	]
 
-	preprocessors: 'dist/transitioner.pretty.js': 'coverage'
+	preprocessors: 'dist/quickcss.pretty.js': 'coverage'
 	
 	reporters: ['mocha', 'coverage']
 
