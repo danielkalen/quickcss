@@ -4,14 +4,87 @@ mocha.timeout(12000)
 mocha.bail()
 expect = chai.expect
 should = chai.should()
+divs = $(('<div />' for i in [1..3]).join '').appendTo('body')
+styles = divs.toArray().map (div)-> getComputedStyle(div)
+
+resetDivs = ()->
+	for div in divs
+		div.removeAttribute('style')
+		div.style.width = '40px'
+		div.style.height = '40px'
+		div.style.backgroundColor = 'blue'
+	return
 
 
 suite "QuickCss", ()->
+	setup(resetDivs)
+	suiteTeardown(resetDivs)
+	
 	suite "Basics", ()->
-		test "", ()->
-			# 
+		test "Apply Basic Styles", ()->
+			Css(divs[0], 'width', '10px')
+			expect(styles[0].width).to.equal '10px'
+			
+			Css(divs[1], 'width', '50vw')
+			expect(divs[1].style.width).to.equal '50vw'
+			expect(Math.round parseFloat(styles[0].width)).not.to.equal 40
+
+
+		test "Suffix unit-less values for length properties", ()->
+			Css(divs[0], 'width', '10')
+			Css(divs[1], 'width', 10)
+			Css(divs[2], 'width', '10%')
+			expect(divs[0].style.width).to.equal '10px'
+			expect(divs[1].style.width).to.equal '10px'
+			expect(divs[2].style.width).to.equal '10%'
+			expect(styles[0].width).to.equal '10px'
+			expect(styles[1].width).to.equal '10px'
+			expect(Math.round parseFloat(styles[2].width)).not.to.equal 40
+		
+
+		test "Suffix won't be added for unit-less values on non-length properties", ()->
+			Css(divs[0], 'width', 'auto')
+			expect(divs[0].style.width).to.equal 'auto'
+			expect(Math.round parseFloat(styles[0].width)).not.to.equal 40
+			
+			Css(divs[1], 'opacity', .5)
+			expect(divs[1].style.opacity).to.equal '0.5'
+			expect(styles[1].opacity).to.equal '0.5'
+
+
+		test "An iterable collection of elements can be passed", ()->
+			Css divs, 'width', 15
+			expect(divs[0].style.width).to.equal '15px'
+			expect(divs[1].style.width).to.equal '15px'
+			expect(divs[2].style.width).to.equal '15px'
+
+
+		test "A style object can be passed", ()->
+			Css divs[0],
+				'position': 'fixed'
+				'width': '55'
+				'height': 12
+				'opacity': 0.8
+
+			expect(divs[0].style.position).to.equal 'fixed'
+			expect(divs[0].style.width).to.equal '55px'
+			expect(divs[0].style.height).to.equal '12px'
+			expect(divs[0].style.opacity).to.equal '0.8'
+
+
+		test "An iterable collection of elements can be passed along with a style object", ()->
+			Css divs, {width:'32px', height:'99px'}
+		
+			expect(divs[0].style.width).to.equal '32px'
+			expect(divs[1].style.width).to.equal '32px'
+			expect(divs[2].style.width).to.equal '32px'
+			expect(divs[0].style.height).to.equal '99px'
+			expect(divs[1].style.height).to.equal '99px'
+			expect(divs[2].style.height).to.equal '99px'
 
 
 
 
 
+
+import ../src/parts/constants
