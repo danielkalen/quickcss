@@ -40,73 +40,80 @@ resetDivs = function() {
 suite("QuickCss", function() {
   setup(resetDivs);
   suiteTeardown(resetDivs);
-  return suite("Basics", function() {
-    test("Apply Basic Styles", function() {
-      Css(divs[0], 'width', '10px');
-      expect(styles[0].width).to.equal('10px');
-      Css(divs[1], 'width', '50vw');
-      expect(divs[1].style.width).to.equal('50vw');
-      return expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+  test("Apply Basic Styles", function() {
+    Css(divs[0], 'width', '10px');
+    expect(styles[0].width).to.equal('10px');
+    Css(divs[1], 'width', '50vw');
+    expect(divs[1].style.width).to.equal('50vw');
+    return expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+  });
+  test("Suffix unit-less values for length properties", function() {
+    Css(divs[0], 'width', '10');
+    Css(divs[1], 'width', 10);
+    Css(divs[2], 'width', '10%');
+    expect(divs[0].style.width).to.equal('10px');
+    expect(divs[1].style.width).to.equal('10px');
+    expect(divs[2].style.width).to.equal('10%');
+    expect(styles[0].width).to.equal('10px');
+    expect(styles[1].width).to.equal('10px');
+    return expect(Math.round(parseFloat(styles[2].width))).not.to.equal(40);
+  });
+  test("Suffix won't be added for unit-less values on non-length properties", function() {
+    Css(divs[0], 'width', 'auto');
+    expect(divs[0].style.width).to.equal('auto');
+    expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+    Css(divs[1], 'opacity', .5);
+    expect(divs[1].style.opacity).to.equal('0.5');
+    return expect(styles[1].opacity).to.equal('0.5');
+  });
+  test("An iterable collection of elements can be passed", function() {
+    Css(divs, 'width', 15);
+    expect(divs[0].style.width).to.equal('15px');
+    expect(divs[1].style.width).to.equal('15px');
+    return expect(divs[2].style.width).to.equal('15px');
+  });
+  test("A style object can be passed", function() {
+    Css(divs[0], {
+      'position': 'fixed',
+      'width': '55',
+      'height': 12,
+      'opacity': 0.8
     });
-    test("Suffix unit-less values for length properties", function() {
-      Css(divs[0], 'width', '10');
-      Css(divs[1], 'width', 10);
-      Css(divs[2], 'width', '10%');
-      expect(divs[0].style.width).to.equal('10px');
-      expect(divs[1].style.width).to.equal('10px');
-      expect(divs[2].style.width).to.equal('10%');
-      expect(styles[0].width).to.equal('10px');
-      expect(styles[1].width).to.equal('10px');
-      return expect(Math.round(parseFloat(styles[2].width))).not.to.equal(40);
+    expect(divs[0].style.position).to.equal('fixed');
+    expect(divs[0].style.width).to.equal('55px');
+    expect(divs[0].style.height).to.equal('12px');
+    return expect(divs[0].style.opacity).to.equal('0.8');
+  });
+  test("An iterable collection of elements can be passed along with a style object", function() {
+    Css(divs, {
+      width: '32px',
+      height: '99px'
     });
-    test("Suffix won't be added for unit-less values on non-length properties", function() {
-      Css(divs[0], 'width', 'auto');
-      expect(divs[0].style.width).to.equal('auto');
-      expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
-      Css(divs[1], 'opacity', .5);
-      expect(divs[1].style.opacity).to.equal('0.5');
-      return expect(styles[1].opacity).to.equal('0.5');
-    });
-    test("An iterable collection of elements can be passed", function() {
-      Css(divs, 'width', 15);
-      expect(divs[0].style.width).to.equal('15px');
-      expect(divs[1].style.width).to.equal('15px');
-      return expect(divs[2].style.width).to.equal('15px');
-    });
-    test("A style object can be passed", function() {
-      Css(divs[0], {
-        'position': 'fixed',
-        'width': '55',
-        'height': 12,
-        'opacity': 0.8
-      });
-      expect(divs[0].style.position).to.equal('fixed');
-      expect(divs[0].style.width).to.equal('55px');
-      expect(divs[0].style.height).to.equal('12px');
-      return expect(divs[0].style.opacity).to.equal('0.8');
-    });
-    test("An iterable collection of elements can be passed along with a style object", function() {
-      Css(divs, {
-        width: '32px',
-        height: '99px'
-      });
-      expect(divs[0].style.width).to.equal('32px');
-      expect(divs[1].style.width).to.equal('32px');
-      expect(divs[2].style.width).to.equal('32px');
-      expect(divs[0].style.height).to.equal('99px');
-      expect(divs[1].style.height).to.equal('99px');
-      return expect(divs[2].style.height).to.equal('99px');
-    });
-    test("Kebab-cased properties will be transformed to camel-case", function() {
-      Css(divs[0], 'margin-top', '10px');
-      expect(divs[0].style.marginTop).to.equal('10px');
-      return expect(styles[0].marginTop).to.equal('10px');
-    });
-    return test("Invalid properties will be ignored", function() {
-      Css(divs[1], 'topMargin', '25px');
-      expect(divs[0].style.topMargin).not.to.exist;
-      return expect(styles[0].topMargin).not.to.exist;
-    });
+    expect(divs[0].style.width).to.equal('32px');
+    expect(divs[1].style.width).to.equal('32px');
+    expect(divs[2].style.width).to.equal('32px');
+    expect(divs[0].style.height).to.equal('99px');
+    expect(divs[1].style.height).to.equal('99px');
+    return expect(divs[2].style.height).to.equal('99px');
+  });
+  test("Kebab-cased properties will be transformed to camel-case", function() {
+    Css(divs[0], 'margin-top', '10px');
+    expect(divs[0].style.marginTop).to.equal('10px');
+    return expect(styles[0].marginTop).to.equal('10px');
+  });
+  test("Invalid properties will be ignored", function() {
+    Css(divs[1], 'topMargin', '25px');
+    expect(divs[0].style.topMargin).not.to.exist;
+    return expect(styles[0].topMargin).not.to.exist;
+  });
+  return test("If a value is not provided, the current computed value for the selected property will be returned", function() {
+    var computedValue;
+    Css(divs[2], 'marginTop', '5vh');
+    computedValue = styles[2].marginTop;
+    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
+    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
+    expect(Css(divs[2], 'marginTop')).to.equal(styles[2].marginTop);
+    return expect(Css(divs[2], 'topMargin')).to.equal(void 0);
   });
 });
 

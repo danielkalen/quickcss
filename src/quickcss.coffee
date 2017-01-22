@@ -10,7 +10,11 @@ do ()->
 		
 		else
 			property = helpers.normalizeProperty(property)
-			targetEl.style[property] = helpers.normalizeValue(property, value) if property
+			if typeof value is 'undefined'
+				return getComputedStyle(targetEl)[property]
+			
+			else if property
+				targetEl.style[property] = helpers.normalizeValue(property, value)
 
 		return
 

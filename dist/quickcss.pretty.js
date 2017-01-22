@@ -75,7 +75,9 @@
       }
     } else {
       property = helpers.normalizeProperty(property);
-      if (property) {
+      if (typeof value === 'undefined') {
+        return getComputedStyle(targetEl)[property];
+      } else if (property) {
         targetEl.style[property] = helpers.normalizeValue(property, value);
       }
     }
