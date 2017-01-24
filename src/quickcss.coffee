@@ -30,7 +30,7 @@ do ()->
 
 	QuickCss.version = import ../.config/.version
 	### istanbul ignore next ###
-	if exports?.module?
+	if module?.exports?
 		module.exports = QuickCss
 	else if typeof define is 'function' and define.amd
 		define ['quickdom'], ()-> QuickCss
