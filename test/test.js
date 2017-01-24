@@ -106,7 +106,7 @@ suite("QuickCss", function() {
     expect(divs[0].style.topMargin).not.to.exist;
     return expect(styles[0].topMargin).not.to.exist;
   });
-  return test("If a value is not provided, the current computed value for the selected property will be returned", function() {
+  test("If a value is not provided, the current computed value for the selected property will be returned", function() {
     var computedValue;
     Css(divs[2], 'marginTop', '5vh');
     computedValue = styles[2].marginTop;
@@ -114,6 +114,14 @@ suite("QuickCss", function() {
     expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
     expect(Css(divs[2], 'marginTop')).to.equal(styles[2].marginTop);
     return expect(Css(divs[2], 'topMargin')).to.equal(void 0);
+  });
+  return test("If a null value is provided for a property, the property will be deleted", function() {
+    Css(divs[1], 'marginTop', '10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(styles[1].marginTop).to.equal('10px');
+    Css(divs[1], 'marginTop', null);
+    expect(divs[1].style.marginTop).to.equal('');
+    return expect(styles[1].marginTop).to.equal('0px');
   });
 });
 

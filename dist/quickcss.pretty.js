@@ -53,7 +53,7 @@
     }
   };
   helpers.normalizeValue = function(property, value) {
-    if (this.includes(REQUIRES_UNIT_VALUE, property)) {
+    if (this.includes(REQUIRES_UNIT_VALUE, property) && value !== null) {
       value = '' + value;
       if (regEx.digits.test(value) && !regEx.lengthValue.test(value) && !regEx.whitespace.test(value)) {
         value += 'px';
@@ -85,10 +85,10 @@
   QuickCss.version = (function(_this) {
     return function() {};
   })(this)();
-  '1.0.2';
+  '1.0.3';
 
   /* istanbul ignore next */
-  if ((typeof exports !== "undefined" && exports !== null ? exports.module : void 0) != null) {
+  if ((typeof module !== "undefined" && module !== null ? module.exports : void 0) != null) {
     return module.exports = QuickCss;
   } else if (typeof define === 'function' && define.amd) {
     return define(['quickdom'], function() {
