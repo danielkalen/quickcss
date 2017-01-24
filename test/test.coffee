@@ -106,6 +106,17 @@ suite "QuickCss", ()->
 		expect(Css divs[2], 'topMargin').to.equal(undefined)
 
 
+	test "If a null value is provided for a property, the property will be deleted", ()->
+		Css divs[1], 'marginTop', '10px'
+		expect(divs[1].style.marginTop).to.equal '10px'
+		expect(styles[1].marginTop).to.equal '10px'
+		
+		Css divs[1], 'marginTop', null
+		expect(divs[1].style.marginTop).to.equal ''
+		expect(styles[1].marginTop).to.equal '0px'
+
+
+
 
 
 

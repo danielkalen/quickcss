@@ -33,7 +33,7 @@ helpers.normalizeProperty = (property)->
 			return propertyPrefixed if @isPropSupported(propertyPrefixed)
 
 helpers.normalizeValue = (property, value)->
-	if @includes(REQUIRES_UNIT_VALUE, property)
+	if @includes(REQUIRES_UNIT_VALUE, property) and value isnt null
 		value = ''+value
 		value += 'px' if regEx.digits.test(value) and not regEx.lengthValue.test(value) and not regEx.whitespace.test(value)
 
