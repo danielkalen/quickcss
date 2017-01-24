@@ -121,6 +121,14 @@ suite("QuickCss", function() {
     expect(styles[1].marginTop).to.equal('10px');
     Css(divs[1], 'marginTop', null);
     expect(divs[1].style.marginTop).to.equal('');
+    expect(styles[1].marginTop).to.equal('0px');
+    Css(divs[1], 'marginTop', '10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(styles[1].marginTop).to.equal('10px');
+    Css(divs[1], {
+      'marginTop': null
+    });
+    expect(divs[1].style.marginTop).to.equal('');
     return expect(styles[1].marginTop).to.equal('0px');
   });
 });
