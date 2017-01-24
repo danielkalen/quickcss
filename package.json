@@ -2,8 +2,9 @@
   "name": "quickcss",
   "version": "1.0.3",
   "description": "Fast & light CSS styling",
-  "main": "dist/quickcss.pretty.js",
+  "main": "dist/quickcss.js",
   "browser": {
+    "./debug": "dist/quickcss.debug.js",
     "./src": "src/quickcss.coffee"
   },
   "directories": {
@@ -17,9 +18,9 @@
     "test:chrome": "karma start --browsers Chrome .config/karma.conf.coffee",
     "build": "npm run compile && npm run super-minify",
     "compile": "npm run compile:js && npm run compile:test",
-    "compile:js": "foreach -g 'src/*.coffee' -x 'simplyimport -i {{path}} | coffee -b -s -c > dist/{{name}}.pretty.js && uglifyjs dist/{{name}}.pretty.js -m -c keep_fargs,unused=false -o dist/{{name}}.js'",
+    "compile:js": "foreach -g 'src/*.coffee' -x 'simplyimport -i {{path}} | coffee -b -s -c > dist/{{name}}.debug.js && uglifyjs dist/{{name}}.debug.js -m -c keep_fargs,unused=false -o dist/{{name}}.js'",
     "compile:test": "simplyimport -i test/test.coffee | coffee -b -c -s > test/test.js",
-    "super-minify": "closure-service dist/quickcss.pretty.js > dist/quickcss.js",
+    "super-minify": "closure-service dist/quickcss.debug.js > dist/quickcss.js",
     "watch": "npm run watch:js & npm run watch:test",
     "watch:js": "simplywatch -g 'src/*.coffee' -x 'npm run compile:js -s'",
     "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run compile:test -s'",

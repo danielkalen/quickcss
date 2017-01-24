@@ -4,7 +4,7 @@ module.exports = (config)-> config.set
 	browserConsoleLogOptions: level:'log', terminal:true
 	frameworks: ['mocha', 'chai']
 	files: [
-		'dist/quickcss.pretty.js'
+		'dist/quickcss.debug.js'
 		'node_modules/bluebird/js/browser/bluebird.js'
 		'node_modules/jquery/dist/jquery.min.js'
 		'test/test.js'
@@ -13,7 +13,7 @@ module.exports = (config)-> config.set
 		'**/*.git'
 	]
 
-	preprocessors: 'dist/quickcss.pretty.js': 'coverage'
+	preprocessors: 'dist/quickcss.debug.js': 'coverage'
 	
 	reporters: ['mocha', 'coverage']
 
