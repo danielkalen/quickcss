@@ -82,7 +82,7 @@
       }
     }
   };
-  QuickCss.version = '1.0.3';
+  QuickCss.version = '1.0.4';
 
   /* istanbul ignore next */
   if ((typeof module !== "undefined" && module !== null ? module.exports : void 0) != null) {
