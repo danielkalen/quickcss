@@ -17,6 +17,8 @@ REQUIRES_UNIT_VALUE = [
 	'minHeight'
 	'minInlineSize'
 	'minWidth'
+	'maxHeight'
+	'maxWidth'
 	'outlineOffset'
 	'outlineWidth'
 	'perspective'
