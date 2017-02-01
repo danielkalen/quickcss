@@ -2,7 +2,7 @@
 (function() {
   var POSSIBLE_PREFIXES, QUAD_SHORTHANDS, QuickCss, REQUIRES_UNIT_VALUE, helpers, regEx, sampleDiv, sampleStyle;
   POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
-  REQUIRES_UNIT_VALUE = ['backgroundPositionX', 'backgroundPositionY', 'blockSize', 'borderWidth', 'columnRuleWidth', 'cx', 'cy', 'fontSize', 'gridColumnGap', 'gridRowGap', 'height', 'inlineSize', 'lineHeight', 'minBlockSize', 'minHeight', 'minInlineSize', 'minWidth', 'outlineOffset', 'outlineWidth', 'perspective', 'shapeMargin', 'strokeDashoffset', 'strokeWidth', 'textIndent', 'width', 'wordSpacing', 'x', 'y'];
+  REQUIRES_UNIT_VALUE = ['backgroundPositionX', 'backgroundPositionY', 'blockSize', 'borderWidth', 'columnRuleWidth', 'cx', 'cy', 'fontSize', 'gridColumnGap', 'gridRowGap', 'height', 'inlineSize', 'lineHeight', 'minBlockSize', 'minHeight', 'minInlineSize', 'minWidth', 'outlineOffset', 'outlineWidth', 'perspective', 'shapeMargin', 'strokeDashoffset', 'strokeWidth', 'textIndent', 'width', 'wordSpacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
   QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'borderRadius'];
   QUAD_SHORTHANDS.forEach(function(property) {
     var direction, i, len, ref, results;
@@ -82,7 +82,7 @@
       }
     }
   };
-  QuickCss.version = '1.0.4';
+  QuickCss.version = '1.0.5';
 
   /* istanbul ignore next */
   if ((typeof module !== "undefined" && module !== null ? module.exports : void 0) != null) {
