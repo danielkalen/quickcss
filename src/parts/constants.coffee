@@ -26,6 +26,10 @@ REQUIRES_UNIT_VALUE = [
 	'textIndent'
 	'width'
 	'wordSpacing'
+	'top'
+	'bottom'
+	'left'
+	'right'
 	'x'
 	'y'
 ]
