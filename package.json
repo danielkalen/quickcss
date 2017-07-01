@@ -30,7 +30,7 @@
     "test:karma": "karma start .config/karma.conf.coffee",
     "test:electron": "karma start --single-run --browsers Electron .config/karma.conf.coffee",
     "test:chrome": "karma star --single-run --browsers Chrome .config/karma.conf.coffee",
-    "build": "npm run build:js && npm run build:js-debug && npm run build:test",
+    "build": "npm run build:js && npm run build:js:debug && npm run build:test",
     "build:js": "simplyimport bundle --umd quickcss src/quickcss.coffee > dist/quickcss.js",
     "build:js:debug": "simplyimport bundle --umd quickcss -d src/quickcss.coffee > dist/quickcss.debug.js",
     "build:test": "simplyimport bundle -d test/test.coffee > test/test.js",
