@@ -5,13 +5,26 @@
   "main": "dist/quickcss.js",
   "browser": {
     "./debug": "dist/quickcss.debug.js",
-    "./src": "src/quickcss.coffee"
+    "./dist/quickcss.js": "src/quickcss.coffee"
+  },
+  "browserify": {
+    "transform": [
+      "simplyimport/compat"
+    ]
+  },
+  "simplyimport": {
+    "finalTransform": [
+      ".config/transforms/minify-super",
+      ".config/transforms/minify-rename",
+      ".config/transforms/minify-simple"
+    ]
   },
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "postversion": "echo \\'$(json -f package.json version)\\' > .config/.version.coffee && npm run build",
+    "postversion": "npm run build",
+    "prepublishOnly": "npm run test",
     "test": "npm run test:electron -s || true",
     "test:local": "open test/testrunner.html",
     "test:karma": "karma start .config/karma.conf.coffee",
@@ -41,6 +54,7 @@
     "chai": "^3.5.0",
     "closure-compiler-service": "^0.6.1",
     "electron": "^1.6.11",
+    "fs-jetpack": "^1.1.0",
     "google-closure-compiler-js": "^20170521.0.0",
     "jquery": "^3.1.1",
     "json": "^9.0.4",
@@ -57,6 +71,7 @@
     "mocha": "^3.2.0",
     "simplyimport": "^4.0.0-q",
     "simplywatch": "^3.0.0-j",
+    "smart-extend": "^1.6.0",
     "uglify-js": "^3.0.22"
   }
 }
