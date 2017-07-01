@@ -59,5 +59,6 @@
     "mocha": "^3.2.0",
     "simplyimport": "^4.0.0-q",
     "simplywatch": "^3.0.0-j",
+    "uglify-js": "^3.0.22"
   }
 }
