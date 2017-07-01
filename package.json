@@ -44,6 +44,7 @@
     "coffee-script": "^1.12.2",
     "electron": "^1.6.11",
     "foreach-cli": "^1.7.0",
+    "google-closure-compiler-js": "^20170521.0.0",
     "jquery": "^3.1.1",
     "json": "^9.0.4",
     "karma": "^1.4.0",
