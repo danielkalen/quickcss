@@ -1,6 +1,6 @@
 {
   "name": "quickcss",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Fast & light CSS styling",
   "main": "dist/quickcss.js",
   "browser": {
