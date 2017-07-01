@@ -1,11 +1,10 @@
-sampleDiv = document.createElement('div')
-sampleStyle = sampleDiv.style
-regEx = 
-	lengthValue: /^\d+(?:[a-z]|\%)+$/i
-	digits: /\d+$/
-	whitespace: /\s/
+sampleStyle = document.createElement('div').style
+REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i
+REGEX_DIGITS = /\d+$/
+REGEX_SPACE = /\s/
 
 helpers = {}
+
 helpers.includes = (target, item)->
 	target and target.indexOf(item) isnt -1
 
@@ -35,7 +34,7 @@ helpers.normalizeProperty = (property)->
 helpers.normalizeValue = (property, value)->
 	if @includes(REQUIRES_UNIT_VALUE, property) and value isnt null
 		value = ''+value
-		value += 'px' if regEx.digits.test(value) and not regEx.lengthValue.test(value) and not regEx.whitespace.test(value)
+		value += 'px' if REGEX_DIGITS.test(value) and not REGEX_LEN_VAL.test(value) and not REGEX_SPACE.test(value)
 
 	return value
 
