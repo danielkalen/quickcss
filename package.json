@@ -23,8 +23,9 @@
     "test": "test"
   },
   "scripts": {
-    "postversion": "npm run build",
+    "postversion": "npm run build && git add . && git commit -a -m '[Build]'",
     "prepublishOnly": "npm run test",
+    "postpublish": "git push",
     "test": "npm run test:electron -s || true",
     "test:local": "open test/testrunner.html",
     "test:karma": "karma start .config/karma.conf.coffee",
