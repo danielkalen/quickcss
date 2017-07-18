@@ -1,5 +1,5 @@
-import 'parts/constants'
-import 'parts/helpers'
+import './constants'
+import './helpers'
 
 QuickCSS = (targetEl, property, value)->
 	if helpers.isIterable(targetEl)

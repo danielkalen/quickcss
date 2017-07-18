@@ -5,7 +5,7 @@
   "main": "dist/quickcss.js",
   "browser": {
     "./debug": "dist/quickcss.debug.js",
-    "./dist/quickcss.js": "src/quickcss.coffee"
+    "./dist/quickcss.js": "src/index.coffee"
   },
   "browserify": {
     "transform": [
@@ -26,23 +26,22 @@
     "postversion": "npm run build && git add . && git commit -a -m '[Build]'",
     "prepublishOnly": "npm run test",
     "postpublish": "git push",
+    "watch": "cake -d watch",
+    "build": "cake -d build && cake build && cake measure && cp -r build/* dist/",
     "test": "npm run test:browser -s || true",
     "test:travis": "npm run test:browser -s && npm run test:minified -s",
     "test:local": "open test/testrunner.html",
-    "test:karma": "karma start .config/karma.conf.coffee",
     "test:minified": "minified=1 npm run test:browser -s || true",
-    "test:browser": "karma start --single-run --browsers Electron .config/karma.conf.coffee",
-    "test:chrome": "karma start --single-run --browsers Chrome .config/karma.conf.coffee",
-    "test:firefox": "karma start --single-run --browsers Firefox .config/karma.conf.coffee",
-    "test:safari": "karma start --single-run --browsers Safari .config/karma.conf.coffee",
-    "build": "npm run build:js && npm run build:js:debug && npm run build:test",
-    "build:js": "simplyimport bundle --umd quickcss src/quickcss.coffee > dist/quickcss.js",
-    "build:js:debug": "simplyimport bundle --umd quickcss -d src/quickcss.coffee > dist/quickcss.debug.js",
-    "build:test": "simplyimport bundle -d test/test.coffee > test/test.js",
-    "watch": "npm run watch:js & npm run watch:test",
-    "watch:js": "simplywatch -g 'src/*.coffee' -x 'npm run build:js:debug -s'",
-    "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run build:test -s'",
-    "coverage:badge": "badge-gen -d ./.config/badges/coverage"
+    "test:karma": "cake install:test;   karma start .config/karma.conf.coffee",
+    "test:browser": "cake install:test; karma start --single-run --browsers Electron .config/karma.conf.coffee",
+    "test:chrome": "cake install:test;  karma start --single-run --browsers Chrome .config/karma.conf.coffee",
+    "test:firefox": "cake install:test; karma start --single-run --browsers Firefox .config/karma.conf.coffee",
+    "test:safari": "cake install:test;  karma start --single-run --browsers Safari .config/karma.conf.coffee",
+    "test:sauce": "cake install:test;   sauce=1 karma start .config/karma.conf.coffee",
+    "coverage": "cake install:coverage; npm run coverage:run && npm run coverage:badge",
+    "coverage:run": "coverage=true npm run test:electron",
+    "coverage:badge": "badge-gen -d ./.config/badges/coverage",
+    "coverage:show": "open coverage/lcov-report/index.html"
   },
   "repository": {
     "type": "git",
@@ -55,28 +54,14 @@
   },
   "homepage": "https://github.com/danielkalen/quickcss#readme",
   "devDependencies": {
-    "badge-gen": "^1.0.0",
-    "chai": "^3.5.0",
-    "closure-compiler-service": "^0.6.1",
-    "electron": "^1.6.11",
-    "fs-jetpack": "^1.1.0",
-    "google-closure-compiler-js": "^20170521.0.0",
-    "jquery": "^3.1.1",
-    "json": "^9.0.4",
-    "karma": "^1.4.0",
-    "karma-chai": "^0.1.0",
-    "karma-chrome-launcher": "^2.0.0",
-    "karma-coverage": "^1.1.1",
-    "karma-electron": "^5.2.1",
-    "karma-firefox-launcher": "^1.0.0",
-    "karma-mocha": "^1.3.0",
-    "karma-mocha-reporter": "^2.2.1",
-    "karma-opera-launcher": "^1.0.0",
-    "karma-safari-launcher": "^1.0.0",
-    "mocha": "^3.2.0",
+    "bluebird": "^3.5.0",
+    "chalk": "^2.0.1",
+    "coffee-script": "^1.12.6",
+    "execa": "^0.7.0",
+    "fs-jetpack": "^0.13.3",
+    "promise-break": "^0.1.1",
+    "semver": "^5.3.0",
     "simplyimport": "^4.0.0-s12",
-    "simplywatch": "^3.0.0-l2",
-    "smart-extend": "^1.6.0",
-    "uglify-js": "^3.0.22"
+    "simplywatch": "^3.0.0-l2"
   }
 }

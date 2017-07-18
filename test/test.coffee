@@ -1,12 +1,13 @@
+@Css = window.quickcss
+chai = import 'chai'
+chai.use(import 'chai-almost')
 mocha.setup('tdd')
 mocha.slow(400)
 mocha.timeout(12000)
 mocha.bail()
 expect = chai.expect
-should = chai.should()
 divs = $(('<div />' for i in [1..3]).join '').appendTo('body')
 styles = divs.toArray().map (div)-> getComputedStyle(div)
-@Css = window.quickcss
 
 resetDivs = ()->
 	for div in divs
@@ -194,4 +195,4 @@ suite "QuickCss", ()->
 
 
 
-import '../src/parts/constants'
+import '../src/constants'
