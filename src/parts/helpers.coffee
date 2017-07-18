@@ -2,6 +2,7 @@ sampleStyle = document.createElement('div').style
 REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i
 REGEX_DIGITS = /\d+$/
 REGEX_SPACE = /\s/
+REGEX_KEBAB = /([A-Z])+/g
 
 helpers = {}
 
@@ -17,27 +18,43 @@ helpers.isIterable = (target)->
 helpers.isPropSupported = (property)->
 	typeof sampleStyle[property] isnt 'undefined'
 
-helpers.toTitleCase = (string)->
-	string[0].toUpperCase()+string.slice(1)
+helpers.toKebabCase = (string)->
+	string.replace REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
 
-helpers.normalizeProperty = (property)->
-	if @isPropSupported(property)
+helpers.normalizeProperty = (property)->	
+	property = helpers.toKebabCase(property)
+	
+	if helpers.isPropSupported(property)
 		return property
 	else
-		propertyTitled = @toTitleCase(property)
-		
+		return "#{helpers.getPrefix(property,true)}#{property}"
+
+helpers.getPrefix = (property, skipInitialCheck)->
+	if skipInitialCheck or not helpers.isPropSupported(property)
 		for prefix in POSSIBLE_PREFIXES
-			propertyPrefixed = "#{prefix}#{propertyTitled}"
 			### istanbul ignore next ###
-			return propertyPrefixed if @isPropSupported(propertyPrefixed)
+			return "-#{prefix}-" if helpers.isPropSupported("-#{prefix}-#{property}")
+	
+	return ''
 
 helpers.normalizeValue = (property, value)->
-	if @includes(REQUIRES_UNIT_VALUE, property) and value isnt null
+	if helpers.includes(REQUIRES_UNIT_VALUE, property) and value isnt null
 		value = ''+value
 		value += 'px' if REGEX_DIGITS.test(value) and not REGEX_LEN_VAL.test(value) and not REGEX_SPACE.test(value)
 
 	return value
 
+
+styleEl = null
+styleContent = ''
+helpers.inlineStyle = (rule)->
+	if not styleEl
+		styleEl = document.createElement('style')
+		styleEl.id = 'quickcss'
+		document.head.appendChild(styleEl)
+
+	unless helpers.includes(styleContent, rule)
+		styleEl.innerHTML = styleContent += rule
 
 
 
