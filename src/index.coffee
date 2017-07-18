@@ -18,6 +18,7 @@ QuickCSS = (targetEl, property, value)->
 
 	return
 
+
 QuickCSS.animation = (name, frames)-> if name and typeof name is 'string' and frames and typeof frames is 'object'
 	prefix = helpers.getPrefix('animation')
 	generated = ''

@@ -48,10 +48,10 @@ module.exports =
 	# chrome_old_win:		device 'chrome', 30, 'win'
 	firefox_new_mac:	device 'firefox', 53, 'mac'
 	# firefox_semi_mac:	device 'firefox', 40, 'mac'
-	# firefox_old_mac:	device 'firefox', 30, 'mac'
+	# firefox_old_mac:	device 'firefox', 35, 'mac'
 	# firefox_new_win:	device 'firefox', 53, 'win'
 	firefox_semi_win:	device 'firefox', 40, 'win'
-	firefox_old_win:	device 'firefox', 30, 'win'
+	firefox_old_win:	device 'firefox', 35, 'win'
 	edge14:				device 'edge', 14
 	edge13:				device 'edge', 13
 	ie11:				device 'ie', 11

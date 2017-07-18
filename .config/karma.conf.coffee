@@ -47,7 +47,7 @@ module.exports = (config)-> config.set
 	customLaunchers: require('./sauceTargets')
 	sauceLabs: 
 		testName: 'QuickCSS Test Suite'
-		recordVideo: true
+		recordVideo: false
 		recordScreenshots: false
 		build: require('../package.json').version+'-'+Math.round(Math.random()*1e6).toString(16)
 		username: 'quickcss'
