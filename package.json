@@ -24,7 +24,7 @@
   },
   "scripts": {
     "postversion": "npm run build && git add . && git commit -a -m '[Build]'",
-    "prepublishOnly": "npm run test",
+    "prepublishOnly": "npm run test:travis",
     "postpublish": "git push",
     "watch": "cake -d watch",
     "build": "cake -d build && cake build && cake measure && cp -r build/* dist/",

@@ -12,7 +12,7 @@ coverageModules = ['istanbul', 'badge-gen', 'coffee-coverage']
 testModules = [
 	'jquery', 'mocha', 'chai', 'chai-almost'
 	'electron', 'karma@1.6.0', 'karma-chrome-launcher', 'karma-coverage', 'karma-electron', 'karma-firefox-launcher',
-	'karma-ie-launcher', 'karma-mocha', 'karma-opera-launcher', 'karma-safari-launcher', 'github:danielkalen/karma-sauce-launcher'
+	'karma-ie-launcher', 'karma-mocha', 'karma-mocha-reporter', 'karma-opera-launcher', 'karma-safari-launcher', 'github:danielkalen/karma-sauce-launcher'
 ]
 MEASURE_LOG = './.config/measure.json'
 PACKAGE = './package.json'
