@@ -145,7 +145,7 @@ runTaskList = (tasks)->
 	(new (require 'listr')(tasks, concurrent:true)).run()
 
 
-measure = (target, file)->
+measure = (file)->
 	gzipped = Promise.promisifyAll require('gzipped')
 	bytes = require 'sugar/number/bytes'
 	isEqual = require 'sugar/object/isEqual'
@@ -168,7 +168,6 @@ measure = (target, file)->
 		
 		.then (updatedLog)-> fs.writeAsync MEASURE_LOG, updatedLog
 		.then ()->
-			console.log chalk.bold.underline.red target.toUpperCase()
 			console.log "#{chalk.dim 'DEBUG  '} #{chalk.green results.debug.gzip} (#{chalk.yellow results.debug.orig})"
 			console.log "#{chalk.dim 'RELEASE'} #{chalk.green results.release.gzip} (#{chalk.yellow results.release.orig})"
 			console.log '\n'
