@@ -156,7 +156,7 @@ QuickCSS.animation = function(name, frames) {
   }
 };
 
-QuickCSS.version = "1.0.8";
+QuickCSS.version = "1.1.0";
 
 module.exports = QuickCSS;
 
