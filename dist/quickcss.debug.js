@@ -8,7 +8,7 @@ exports: {}
 };
 })({}, {
 0: function (require, module, exports) {
-var QuickCss;
+var QuickCSS;
 
 var POSSIBLE_PREFIXES, QUAD_SHORTHANDS, REQUIRES_UNIT_VALUE;
 
@@ -115,17 +115,17 @@ helpers.inlineStyle = function(rule) {
 
 ;
 
-QuickCss = function(targetEl, property, value) {
+QuickCSS = function(targetEl, property, value) {
   var i, len, subEl, subProperty, subValue;
   if (helpers.isIterable(targetEl)) {
     for (i = 0, len = targetEl.length; i < len; i++) {
       subEl = targetEl[i];
-      QuickCss(subEl, property, value);
+      QuickCSS(subEl, property, value);
     }
   } else if (typeof property === 'object') {
     for (subProperty in property) {
       subValue = property[subProperty];
-      QuickCss(targetEl, subProperty, subValue);
+      QuickCSS(targetEl, subProperty, subValue);
     }
   } else {
     property = helpers.normalizeProperty(property);
@@ -137,7 +137,7 @@ QuickCss = function(targetEl, property, value) {
   }
 };
 
-QuickCss.animation = function(name, frames) {
+QuickCSS.animation = function(name, frames) {
   var frame, generated, prefix, property, rules, value;
   if (name && typeof name === 'string' && frames && typeof frames === 'object') {
     prefix = helpers.getPrefix('animation');
@@ -156,9 +156,9 @@ QuickCss.animation = function(name, frames) {
   }
 };
 
-QuickCss.version = "1.0.7";
+QuickCSS.version = "1.0.7";
 
-module.exports = QuickCss;
+module.exports = QuickCSS;
 
 ;
 return module.exports;
