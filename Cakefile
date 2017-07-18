@@ -114,7 +114,7 @@ task 'install:measure', ()->
 
 
 
-task 'measure', ()->
+task 'measure', (options)->
 	Promise.resolve()
 		.then ()-> fs.writeAsync(MEASURE_LOG, {}) if not fs.exists(MEASURE_LOG)
 		.then ()-> invoke 'install:measure'
