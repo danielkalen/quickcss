@@ -83,11 +83,15 @@ suite "QuickCss", ()->
 		expect(divs[2].style.height).to.equal '99px'
 
 
-	test "Kebab-cased properties will be transformed to camel-case", ()->
+	test "Kebab-cased/camel-cased properties will be normalized", ()->
 		Css divs[0], 'margin-top', '10px'
-
 		expect(divs[0].style.marginTop).to.equal '10px'
 		expect(styles[0].marginTop).to.equal '10px'
+
+		Css divs[0], 'marginBottom', '12px'
+		expect(divs[0].style.marginBottom).to.equal '12px'
+		expect(styles[0].marginBottom).to.equal '12px'
+
 
 
 	test "Invalid properties will be ignored", ()->
@@ -124,6 +128,66 @@ suite "QuickCss", ()->
 		expect(divs[1].style.marginTop).to.equal ''
 		expect(styles[1].marginTop).to.equal '0px'
 
+	suite "animation", ()->
+		test ".animation(name, keyframes) will create a @keyframes rule", ()->
+			lastEl = $(document.head).children().last()[0]
+			expect(lastEl.id).not.to.equal 'quickcss'
+
+			Css.animation 'myAnimation',
+				'0%':
+					transform: 'rotate(0deg)'
+					opacity: 1
+					width: 100
+					marginTop: 5
+				'50%':
+					width: 150
+				'100%':
+					transform: 'rotate(360deg)'
+					opacity: 0.5
+					width: 50
+			
+			lastEl = $(document.head).children().last()[0]
+			expect(lastEl.id).to.equal 'quickcss'
+			expect(lastEl.innerHTML).to.include 'keyframes myAnimation {'
+			expect(lastEl.innerHTML).to.include '0% {'
+			expect(lastEl.innerHTML).to.include 'transform: rotate(0deg)'
+			expect(lastEl.innerHTML).to.include 'opacity: 1'
+			expect(lastEl.innerHTML).to.include 'width: 100px'
+			expect(lastEl.innerHTML).to.include 'margin-top: 5px'
+			expect(lastEl.innerHTML).to.include '50% {'
+			expect(lastEl.innerHTML).to.include 'width: 150px'
+			expect(lastEl.innerHTML).to.include '100% {'
+			expect(lastEl.innerHTML).to.include 'transform: rotate(360deg)'
+			expect(lastEl.innerHTML).to.include 'opacity: 0.5'
+			expect(lastEl.innerHTML).to.include 'width: 50px'
+		
+
+		test "calling .animation() with the same args multiple times should only insert the keyframes once", ()->
+			animation =
+				'0%':
+					transform: 'rotate(0deg)'
+				'100%':
+					transform: 'rotate(360deg)'
+			
+			Css.animation 'someAnimation', animation
+			lastEl = $(document.head).children().last()[0]
+			expect(lastEl.innerHTML).to.include 'keyframes someAnimation {'
+			expect(lastEl.innerHTML.match(/someAnimation/g)?.length).to.equal 1
+			
+			Css.animation 'someAnimation', animation
+			expect(lastEl.innerHTML.match(/someAnimation/g)?.length).to.equal 1
+			
+			Css.animation 'someAnimation2', animation
+			expect(lastEl.innerHTML.match(/someAnimation/g)?.length).to.equal 2
+			expect(lastEl.innerHTML.match(/someAnimation2/g)?.length).to.equal 1
+			
+			Css.animation 'someAnimation2', animation
+			expect(lastEl.innerHTML.match(/someAnimation/g)?.length).to.equal 2
+			expect(lastEl.innerHTML.match(/someAnimation2/g)?.length).to.equal 1
+			
+			Css.animation 'someAnimation2', {'from':{width:50}, 'to':{width:100}}
+			expect(lastEl.innerHTML.match(/someAnimation/g)?.length).to.equal 3
+			expect(lastEl.innerHTML.match(/someAnimation2/g)?.length).to.equal 2
 
 
 
