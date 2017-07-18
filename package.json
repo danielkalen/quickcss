@@ -37,8 +37,8 @@
     "build:js:debug": "simplyimport bundle --umd quickcss -d src/quickcss.coffee > dist/quickcss.debug.js",
     "build:test": "simplyimport bundle -d test/test.coffee > test/test.js",
     "watch": "npm run watch:js & npm run watch:test",
-    "watch:js": "simplywatch -g 'src/*.coffee' -x 'npm run compile:js:debug -s'",
-    "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run compile:test -s'",
+    "watch:js": "simplywatch -g 'src/*.coffee' -x 'npm run build:js:debug -s'",
+    "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run build:test -s'",
     "coverage:badge": "badge-gen -d ./.config/badges/coverage"
   },
   "repository": {
