@@ -1,33 +1,33 @@
 POSSIBLE_PREFIXES = ['webkit','moz','ms','o']
 REQUIRES_UNIT_VALUE = [
-	'backgroundPositionX'
-	'backgroundPositionY'
-	'blockSize'
-	'borderWidth'
-	'columnRuleWidth'
+	'background-position-x'
+	'background-position-y'
+	'block-size'
+	'border-width'
+	'columnRule-width'
 	'cx'
 	'cy'
-	'fontSize'
-	'gridColumnGap'
-	'gridRowGap'
+	'font-size'
+	'grid-column-gap'
+	'grid-row-gap'
 	'height'
-	'inlineSize'
-	'lineHeight'
-	'minBlockSize'
-	'minHeight'
-	'minInlineSize'
-	'minWidth'
-	'maxHeight'
-	'maxWidth'
-	'outlineOffset'
-	'outlineWidth'
+	'inline-size'
+	'line-height'
+	'minBlock-size'
+	'min-height'
+	'min-inline-size'
+	'min-width'
+	'max-height'
+	'max-width'
+	'outline-offset'
+	'outline-width'
 	'perspective'
-	'shapeMargin'
-	'strokeDashoffset'
-	'strokeWidth'
-	'textIndent'
+	'shape-margin'
+	'stroke-dashoffset'
+	'stroke-width'
+	'text-indent'
 	'width'
-	'wordSpacing'
+	'word-spacing'
 	'top'
 	'bottom'
 	'left'
@@ -40,9 +40,12 @@ QUAD_SHORTHANDS = [
 	'margin'
 	'padding'
 	'border'
-	'borderRadius'
+	'border-radius'
 ]
+directions = ['top','bottom','left','right']
+
 QUAD_SHORTHANDS.forEach (property)->
 	REQUIRES_UNIT_VALUE.push property
-	for direction in ['Top','Bottom','Left','Right']
-		REQUIRES_UNIT_VALUE.push property+direction
+	for direction in directions
+		REQUIRES_UNIT_VALUE.push property+'-'+direction
+	return

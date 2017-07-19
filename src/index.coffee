@@ -27,7 +27,9 @@ QuickCSS.animation = (name, frames)-> if name and typeof name is 'string' and fr
 		generated += "#{frame} {"
 
 		for property,value of rules
-			generated += "#{helpers.normalizeProperty(property)}: #{helpers.normalizeValue(property,value)};"
+			property = helpers.normalizeProperty(property)
+			value = helpers.normalizeValue(property,value)
+			generated += "#{property}: #{value};"
 		
 		generated += "}"
 
