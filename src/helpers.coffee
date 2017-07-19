@@ -40,7 +40,8 @@ helpers.getPrefix = (property, skipInitialCheck)->
 helpers.normalizeValue = (property, value)->
 	if helpers.includes(REQUIRES_UNIT_VALUE, property) and value isnt null
 		value = ''+value
-		value += 'px' if REGEX_DIGITS.test(value) and not REGEX_LEN_VAL.test(value) and not REGEX_SPACE.test(value)
+		if REGEX_DIGITS.test(value) and not REGEX_LEN_VAL.test(value) and not REGEX_SPACE.test(value)
+			value += if property is 'line-height' then 'em' else 'px'
 
 	return value
 
