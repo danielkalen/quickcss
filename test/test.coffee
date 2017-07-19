@@ -4,7 +4,7 @@ chai.use(import 'chai-almost')
 mocha.setup('tdd')
 mocha.slow(400)
 mocha.timeout(12000)
-mocha.bail()
+mocha.bail() unless window.__karma__
 expect = chai.expect
 divs = $(('<div />' for i in [1..3]).join '').appendTo('body')
 styles = divs.toArray().map (div)-> getComputedStyle(div)
