@@ -41,6 +41,27 @@ suite "QuickCss", ()->
 		expect(styles[0].width).to.equal '10px'
 		expect(styles[1].width).to.equal '10px'
 		expect(Math.round parseFloat(styles[2].width)).not.to.equal 40
+		
+		Css(divs[0], 'marginTop', '10')
+		Css(divs[1], 'marginTop', 10)
+		Css(divs[2], 'marginTop', '10%')
+		expect(divs[0].style.marginTop).to.equal '10px'
+		expect(divs[1].style.marginTop).to.equal '10px'
+		expect(divs[2].style.marginTop).to.equal '10%'
+		
+		Css(divs[0], 'fontSize', '10')
+		Css(divs[1], 'fontSize', 10)
+		Css(divs[2], 'fontSize', '10%')
+		expect(divs[0].style.fontSize).to.equal '10px'
+		expect(divs[1].style.fontSize).to.equal '10px'
+		expect(divs[2].style.fontSize).to.equal '10%'
+		
+		Css(divs[0], 'lineHeight', '10')
+		Css(divs[1], 'lineHeight', 10)
+		Css(divs[2], 'lineHeight', '10%')
+		expect(divs[0].style.lineHeight).to.equal '10em'
+		expect(divs[1].style.lineHeight).to.equal '10em'
+		expect(divs[2].style.lineHeight).to.equal '10%'
 	
 
 	test "Suffix won't be added for unit-less values on non-length properties", ()->
