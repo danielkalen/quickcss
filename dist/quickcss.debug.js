@@ -10,24 +10,23 @@ exports: {}
 0: function (require, module, exports) {
 var QuickCSS;
 
-var POSSIBLE_PREFIXES, QUAD_SHORTHANDS, REQUIRES_UNIT_VALUE;
+var POSSIBLE_PREFIXES, QUAD_SHORTHANDS, REQUIRES_UNIT_VALUE, directions;
 
 POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
 
-REQUIRES_UNIT_VALUE = ['backgroundPositionX', 'backgroundPositionY', 'blockSize', 'borderWidth', 'columnRuleWidth', 'cx', 'cy', 'fontSize', 'gridColumnGap', 'gridRowGap', 'height', 'inlineSize', 'lineHeight', 'minBlockSize', 'minHeight', 'minInlineSize', 'minWidth', 'maxHeight', 'maxWidth', 'outlineOffset', 'outlineWidth', 'perspective', 'shapeMargin', 'strokeDashoffset', 'strokeWidth', 'textIndent', 'width', 'wordSpacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
+REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
 
-QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'borderRadius'];
+QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
+
+directions = ['top', 'bottom', 'left', 'right'];
 
 QUAD_SHORTHANDS.forEach(function(property) {
-  var direction, i, len, ref, results;
+  var direction, i, len;
   REQUIRES_UNIT_VALUE.push(property);
-  ref = ['Top', 'Bottom', 'Left', 'Right'];
-  results = [];
-  for (i = 0, len = ref.length; i < len; i++) {
-    direction = ref[i];
-    results.push(REQUIRES_UNIT_VALUE.push(property + direction));
+  for (i = 0, len = directions.length; i < len; i++) {
+    direction = directions[i];
+    REQUIRES_UNIT_VALUE.push(property + '-' + direction);
   }
-  return results;
 });
 
 ;
@@ -92,7 +91,7 @@ helpers.normalizeValue = function(property, value) {
   if (helpers.includes(REQUIRES_UNIT_VALUE, property) && value !== null) {
     value = '' + value;
     if (REGEX_DIGITS.test(value) && !REGEX_LEN_VAL.test(value) && !REGEX_SPACE.test(value)) {
-      value += 'px';
+      value += property === 'line-height' ? 'em' : 'px';
     }
   }
   return value;
@@ -147,7 +146,9 @@ QuickCSS.animation = function(name, frames) {
       generated += frame + " {";
       for (property in rules) {
         value = rules[property];
-        generated += (helpers.normalizeProperty(property)) + ": " + (helpers.normalizeValue(property, value)) + ";";
+        property = helpers.normalizeProperty(property);
+        value = helpers.normalizeValue(property, value);
+        generated += property + ": " + value + ";";
       }
       generated += "}";
     }
@@ -156,7 +157,7 @@ QuickCSS.animation = function(name, frames) {
   }
 };
 
-QuickCSS.version = "1.1.0";
+QuickCSS.version = "1.1.1";
 
 module.exports = QuickCSS;
 
