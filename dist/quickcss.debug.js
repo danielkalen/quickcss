@@ -115,7 +115,7 @@ helpers.inlineStyle = function(rule) {
 ;
 
 QuickCSS = function(targetEl, property, value) {
-  var i, len, subEl, subProperty, subValue;
+  var computedStyle, i, len, subEl, subProperty, subValue;
   if (helpers.isIterable(targetEl)) {
     for (i = 0, len = targetEl.length; i < len; i++) {
       subEl = targetEl[i];
@@ -129,7 +129,8 @@ QuickCSS = function(targetEl, property, value) {
   } else {
     property = helpers.normalizeProperty(property);
     if (typeof value === 'undefined') {
-      return getComputedStyle(targetEl)[property];
+      computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
+      return computedStyle[property];
     } else if (property) {
       targetEl.style[property] = helpers.normalizeValue(property, value);
     }
@@ -157,7 +158,7 @@ QuickCSS.animation = function(name, frames) {
   }
 };
 
-QuickCSS.version = "1.1.1";
+QuickCSS.version = "1.1.2";
 
 module.exports = QuickCSS;
 
