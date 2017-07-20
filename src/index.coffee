@@ -11,7 +11,8 @@ QuickCSS = (targetEl, property, value)->
 	else
 		property = helpers.normalizeProperty(property)
 		if typeof value is 'undefined'
-			return getComputedStyle(targetEl)[property]
+			computedStyle = targetEl._computedStyle ||= getComputedStyle(targetEl)
+			return computedStyle[property]
 		
 		else if property
 			targetEl.style[property] = helpers.normalizeValue(property, value)
