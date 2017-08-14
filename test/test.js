@@ -382,3258 +382,6 @@ module.exports.typeDetect = module.exports;
 ;
 return module.exports;
 },
-1: function (require, module, exports) {
-module.exports = require(4);
-;
-return module.exports;
-},
-40: function (require, module, exports) {
-/*!
- * Chai - getProperties utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/**
- * ### .getProperties(object)
- *
- * This allows the retrieval of property names of an object, enumerable or not,
- * inherited or not.
- *
- * @param {Object} object
- * @returns {Array}
- * @namespace Utils
- * @name getProperties
- * @api public
- */
-
-module.exports = function getProperties(object) {
-  var result = Object.getOwnPropertyNames(object);
-
-  function addProperty(property) {
-    if (result.indexOf(property) === -1) {
-      result.push(property);
-    }
-  }
-
-  var proto = Object.getPrototypeOf(object);
-  while (proto !== null) {
-    Object.getOwnPropertyNames(proto).forEach(addProperty);
-    proto = Object.getPrototypeOf(proto);
-  }
-
-  return result;
-};
-;
-return module.exports;
-},
-9: function (require, module, exports) {
-module.exports = {
-
-  /**
-   * ### config.includeStack
-   *
-   * User configurable property, influences whether stack trace
-   * is included in Assertion error message. Default of false
-   * suppresses stack trace in the error message.
-   *
-   *     chai.config.includeStack = true;  // enable stack on error
-   *
-   * @param {Boolean}
-   * @api public
-   */
-
-  includeStack: false,
-
-  /**
-   * ### config.showDiff
-   *
-   * User configurable property, influences whether or not
-   * the `showDiff` flag should be included in the thrown
-   * AssertionErrors. `false` will always be `false`; `true`
-   * will be true when the assertion has requested a diff
-   * be shown.
-   *
-   * @param {Boolean}
-   * @api public
-   */
-
-  showDiff: true,
-
-  /**
-   * ### config.truncateThreshold
-   *
-   * User configurable property, sets length threshold for actual and
-   * expected values in assertion errors. If this threshold is exceeded, for
-   * example for large data structures, the value is replaced with something
-   * like `[ Array(3) ]` or `{ Object (prop1, prop2) }`.
-   *
-   * Set it to zero if you want to disable truncating altogether.
-   *
-   * This is especially userful when doing assertions on arrays: having this
-   * set to a reasonable large value makes the failure messages readily
-   * inspectable.
-   *
-   *     chai.config.truncateThreshold = 0;  // disable truncating
-   *
-   * @param {Number}
-   * @api public
-   */
-
-  truncateThreshold: 40,
-
-  /**
-   * ### config.useProxy
-   *
-   * User configurable property, defines if chai will use a Proxy to throw
-   * an error when a non-existent property is read, which protects users
-   * from typos when using property-based assertions.
-   *
-   * Set it to false if you want to disable this feature.
-   *
-   *     chai.config.useProxy = false;  // disable use of Proxy
-   *
-   * This feature is automatically disabled regardless of this config value
-   * in environments that don't support proxies.
-   *
-   * @param {Boolean}
-   * @api public
-   */
-
-  useProxy: true,
-
-  /**
-   * ### config.proxyExcludedKeys
-   *
-   * User configurable property, defines which properties should be ignored
-   * instead of throwing an error if they do not exist on the assertion.
-   * This is only applied if the environment Chai is running in supports proxies and
-   * if the `useProxy` configuration setting is enabled.
-   * By default, `then` and `inspect` will not throw an error if they do not exist on the
-   * assertion object because the `.inspect` property is read by `util.inspect` (for example, when
-   * using `console.log` on the assertion object) and `.then` is necessary for promise type-checking.
-   *
-   *     // By default these keys will not throw an error if they do not exist on the assertion object
-   *     chai.config.proxyExcludedKeys = ['then', 'inspect'];
-   *
-   * @param {Array}
-   * @api public
-   */
-
-  proxyExcludedKeys: ['then', 'inspect', 'toJSON']
-};
-;
-return module.exports;
-},
-28: function (require, module, exports) {
-/*!
- * Chai - overwriteProperty utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var chai = require(4);
-var flag = require(23);
-var isProxyEnabled = require(38);
-var transferFlags = require(24);
-
-/**
- * ### .overwriteProperty(ctx, name, fn)
- *
- * Overwites an already existing property getter and provides
- * access to previous value. Must return function to use as getter.
- *
- *     utils.overwriteProperty(chai.Assertion.prototype, 'ok', function (_super) {
- *       return function () {
- *         var obj = utils.flag(this, 'object');
- *         if (obj instanceof Foo) {
- *           new chai.Assertion(obj.name).to.equal('bar');
- *         } else {
- *           _super.call(this);
- *         }
- *       }
- *     });
- *
- *
- * Can also be accessed directly from `chai.Assertion`.
- *
- *     chai.Assertion.overwriteProperty('foo', fn);
- *
- * Then can be used as any other assertion.
- *
- *     expect(myFoo).to.be.ok;
- *
- * @param {Object} ctx object whose property is to be overwritten
- * @param {String} name of property to overwrite
- * @param {Function} getter function that returns a getter function to be used for name
- * @namespace Utils
- * @name overwriteProperty
- * @api public
- */
-
-module.exports = function overwriteProperty(ctx, name, getter) {
-  var _get = Object.getOwnPropertyDescriptor(ctx, name)
-    , _super = function () {};
-
-  if (_get && 'function' === typeof _get.get)
-    _super = _get.get
-
-  Object.defineProperty(ctx, name,
-    { get: function overwritingPropertyGetter() {
-        // Setting the `ssfi` flag to `overwritingPropertyGetter` causes this
-        // function to be the starting point for removing implementation frames
-        // from the stack trace of a failed assertion.
-        //
-        // However, we only want to use this function as the starting point if
-        // the `lockSsfi` flag isn't set and proxy protection is disabled.
-        //
-        // If the `lockSsfi` flag is set, then either this assertion has been
-        // overwritten by another assertion, or this assertion is being invoked
-        // from inside of another assertion. In the first case, the `ssfi` flag
-        // has already been set by the overwriting assertion. In the second
-        // case, the `ssfi` flag has already been set by the outer assertion.
-        //
-        // If proxy protection is enabled, then the `ssfi` flag has already been
-        // set by the proxy getter.
-        if (!isProxyEnabled() && !flag(this, 'lockSsfi')) {
-          flag(this, 'ssfi', overwritingPropertyGetter);
-        }
-
-        // Setting the `lockSsfi` flag to `true` prevents the overwritten
-        // assertion from changing the `ssfi` flag. By this point, the `ssfi`
-        // flag is already set to the correct starting point for this assertion.
-        var origLockSsfi = flag(this, 'lockSsfi');
-        flag(this, 'lockSsfi', true);
-        var result = getter(_super).call(this);
-        flag(this, 'lockSsfi', origLockSsfi);
-
-        if (result !== undefined) {
-          return result;
-        }
-
-        var newAssertion = new chai.Assertion();
-        transferFlags(this, newAssertion);
-        return newAssertion;
-      }
-    , configurable: true
-  });
-};
-;
-return module.exports;
-},
-29: function (require, module, exports) {
-/*!
- * Chai - overwriteMethod utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var addLengthGuard = require(37);
-var chai = require(4);
-var flag = require(23);
-var proxify = require(36);
-var transferFlags = require(24);
-
-/**
- * ### .overwriteMethod(ctx, name, fn)
- *
- * Overwites an already existing method and provides
- * access to previous function. Must return function
- * to be used for name.
- *
- *     utils.overwriteMethod(chai.Assertion.prototype, 'equal', function (_super) {
- *       return function (str) {
- *         var obj = utils.flag(this, 'object');
- *         if (obj instanceof Foo) {
- *           new chai.Assertion(obj.value).to.equal(str);
- *         } else {
- *           _super.apply(this, arguments);
- *         }
- *       }
- *     });
- *
- * Can also be accessed directly from `chai.Assertion`.
- *
- *     chai.Assertion.overwriteMethod('foo', fn);
- *
- * Then can be used as any other assertion.
- *
- *     expect(myFoo).to.equal('bar');
- *
- * @param {Object} ctx object whose method is to be overwritten
- * @param {String} name of method to overwrite
- * @param {Function} method function that returns a function to be used for name
- * @namespace Utils
- * @name overwriteMethod
- * @api public
- */
-
-module.exports = function overwriteMethod(ctx, name, method) {
-  var _method = ctx[name]
-    , _super = function () {
-      throw new Error(name + ' is not a function');
-    };
-
-  if (_method && 'function' === typeof _method)
-    _super = _method;
-
-  var overwritingMethodWrapper = function () {
-    // Setting the `ssfi` flag to `overwritingMethodWrapper` causes this
-    // function to be the starting point for removing implementation frames from
-    // the stack trace of a failed assertion.
-    //
-    // However, we only want to use this function as the starting point if the
-    // `lockSsfi` flag isn't set.
-    //
-    // If the `lockSsfi` flag is set, then either this assertion has been
-    // overwritten by another assertion, or this assertion is being invoked from
-    // inside of another assertion. In the first case, the `ssfi` flag has
-    // already been set by the overwriting assertion. In the second case, the
-    // `ssfi` flag has already been set by the outer assertion.
-    if (!flag(this, 'lockSsfi')) {
-      flag(this, 'ssfi', overwritingMethodWrapper);
-    }
-
-    // Setting the `lockSsfi` flag to `true` prevents the overwritten assertion
-    // from changing the `ssfi` flag. By this point, the `ssfi` flag is already
-    // set to the correct starting point for this assertion.
-    var origLockSsfi = flag(this, 'lockSsfi');
-    flag(this, 'lockSsfi', true);
-    var result = method(_super).apply(this, arguments);
-    flag(this, 'lockSsfi', origLockSsfi);
-
-    if (result !== undefined) {
-      return result;
-    }
-
-    var newAssertion = new chai.Assertion();
-    transferFlags(this, newAssertion);
-    return newAssertion;
-  }
-
-  addLengthGuard(overwritingMethodWrapper, name, false);
-  ctx[name] = proxify(overwritingMethodWrapper, name);
-};
-;
-return module.exports;
-},
-2: function (require, module, exports) {
-'use strict'
-
-var deepEqual = require(5)
-var type = require(6)
-
-var DEFAULT_TOLERANCE = 1e-6
-
-/**
- * small utility functions
- */
-function isNumber (val) {
-  return type(val) === 'number'
-}
-
-function bothNumbers (left, right) {
-  return isNumber(right) && isNumber(left)
-}
-
-function almostEqual (left, right, tol) {
-  return Math.abs(left - right) <= tol
-}
-
-/**
- * Makes a comparator function to be passed to deepEqual.
- * The returned function will return null if both arguments are not numbers,
- * indicating that deepEqual should proceed with other equality checks
- */
-function comparator (tolerance) {
-  return function (left, right) {
-    if (bothNumbers(left, right)) {
-      return almostEqual(left, right, tolerance)
-    }
-    return null
-  }
-}
-
-/**
- * Sets global tolerance and returns a function to be passed to chai.use
- * @see http://chaijs.com/guide/plugins/
- */
-function chaiAlmost (customTolerance) {
-  var standardTolerance = customTolerance || DEFAULT_TOLERANCE
-
-  return function (chai, utils) {
-    var Assertion = chai.Assertion
-    var flag = utils.flag
-
-    /**
-     * Returns a new shallow equality function to override
-     * .equal, .equals, .eq that tests 'almost' equality
-     * if both values are numbers and a 'tolerance' flag is set.
-     * Sends to deep equality check if deep flag is set
-     */
-    function overrideAssertEqual (_super) {
-      return function assertEqual (val, msg) {
-        if (msg) flag(this, 'message', msg)
-
-        var deep = flag(this, 'deep')
-        var tolerance = flag(this, 'tolerance')
-
-        if (deep) {
-          return this.eql(val)
-        } else if (tolerance && bothNumbers(val, this._obj)) {
-          this.assert(almostEqual(val, this._obj, tolerance),
-            'expected #{this} to almost equal #{exp}',
-            'expected #{this} to not almost equal #{exp}',
-            val,
-            this._obj,
-            true
-          )
-        } else {
-          return _super.apply(this, arguments)
-        }
-      }
-    }
-
-    /**
-     * Returns a new deep equality function to override
-     * .eql, .eqls that tests 'almost' equality if both corresponding
-     * values are numbers and tolerance flag is set
-     */
-    function overrideAssertEql (_super) {
-      return function assertEql (val, msg) {
-        if (msg) flag(this, 'message', msg)
-
-        var tolerance = flag(this, 'tolerance')
-
-        if (tolerance) {
-          this.assert(
-            deepEqual(val, this._obj, { comparator: comparator(tolerance) }),
-            'expected #{this} to deeply almost equal #{exp}',
-            'expected #{this} to not deeply almost equal #{exp}',
-            val,
-            this._obj,
-            true
-          )
-        } else {
-          return _super.apply(this, arguments)
-        }
-      }
-    }
-
-    /**
-     * .almost() method. To be used at the end of the chain like:
-     * expect(4).to.not.be.almost(5, 1.5). Simply adds tolerance flag then calls
-     * .equal. This will redirect to .eql if deep flag set
-     */
-    function method (val, toleranceOverride) {
-      var tolerance = toleranceOverride || standardTolerance
-
-      flag(this, 'tolerance', tolerance)
-
-      return this.equal(val)
-    }
-
-    /**
-     * .almost chainable property to be used like:
-     * expect(3.99999999).to.almost.equal(4). Simply adds
-     * tolerance flag to be read by equality checking methods
-     */
-    function chainingBehavior () {
-      flag(this, 'tolerance', standardTolerance)
-    }
-
-    Assertion.addChainableMethod('almost', method, chainingBehavior)
-
-    Assertion.overwriteMethod('equal', overrideAssertEqual)
-    Assertion.overwriteMethod('equals', overrideAssertEqual)
-    Assertion.overwriteMethod('eq', overrideAssertEqual)
-
-    Assertion.overwriteMethod('eql', overrideAssertEql)
-    Assertion.overwriteMethod('eqls', overrideAssertEql)
-  }
-}
-
-module.exports = chaiAlmost
-;
-return module.exports;
-},
-0: function (require, module, exports) {
-var chai, divs, expect, i, resetDivs, styles;
-
-this.Css = window.quickcss;
-
-chai = require(1);
-
-chai.use(require(2));
-
-mocha.setup('tdd');
-
-mocha.slow(400);
-
-mocha.timeout(12000);
-
-if (!window.__karma__) {
-  mocha.bail();
-}
-
-expect = chai.expect;
-
-divs = $(((function() {
-  var j, results;
-  results = [];
-  for (i = j = 1; j <= 3; i = ++j) {
-    results.push('<div />');
-  }
-  return results;
-})()).join('')).appendTo('body');
-
-styles = divs.toArray().map(function(div) {
-  return getComputedStyle(div);
-});
-
-resetDivs = function() {
-  var div, j, len;
-  for (j = 0, len = divs.length; j < len; j++) {
-    div = divs[j];
-    div.removeAttribute('style');
-    div.style.width = '40px';
-    div.style.height = '40px';
-    div.style.backgroundColor = 'blue';
-  }
-};
-
-suite("QuickCss", function() {
-  setup(resetDivs);
-  suiteTeardown(resetDivs);
-  test("Apply Basic Styles", function() {
-    Css(divs[0], 'width', '10px');
-    expect(styles[0].width).to.equal('10px');
-    Css(divs[1], 'width', '50vw');
-    expect(divs[1].style.width).to.equal('50vw');
-    return expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
-  });
-  test("Suffix unit-less values for length properties", function() {
-    Css(divs[0], 'width', '10');
-    Css(divs[1], 'width', 10);
-    Css(divs[2], 'width', '10%');
-    expect(divs[0].style.width).to.equal('10px');
-    expect(divs[1].style.width).to.equal('10px');
-    expect(divs[2].style.width).to.equal('10%');
-    expect(styles[0].width).to.equal('10px');
-    expect(styles[1].width).to.equal('10px');
-    expect(Math.round(parseFloat(styles[2].width))).not.to.equal(40);
-    Css(divs[0], 'marginTop', '10');
-    Css(divs[1], 'marginTop', 10);
-    Css(divs[2], 'marginTop', '10%');
-    expect(divs[0].style.marginTop).to.equal('10px');
-    expect(divs[1].style.marginTop).to.equal('10px');
-    expect(divs[2].style.marginTop).to.equal('10%');
-    Css(divs[0], 'fontSize', '10');
-    Css(divs[1], 'fontSize', 10);
-    Css(divs[2], 'fontSize', '10%');
-    expect(divs[0].style.fontSize).to.equal('10px');
-    expect(divs[1].style.fontSize).to.equal('10px');
-    expect(divs[2].style.fontSize).to.equal('10%');
-    Css(divs[0], 'lineHeight', '10');
-    Css(divs[1], 'lineHeight', 10);
-    Css(divs[2], 'lineHeight', '10%');
-    expect(divs[0].style.lineHeight).to.equal('10em');
-    expect(divs[1].style.lineHeight).to.equal('10em');
-    return expect(divs[2].style.lineHeight).to.equal('10%');
-  });
-  test("Suffix won't be added for unit-less values on non-length properties", function() {
-    Css(divs[0], 'width', 'auto');
-    expect(divs[0].style.width).to.equal('auto');
-    expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
-    Css(divs[1], 'opacity', .5);
-    expect(divs[1].style.opacity).to.equal('0.5');
-    return expect(styles[1].opacity).to.equal('0.5');
-  });
-  test("An iterable collection of elements can be passed", function() {
-    Css(divs, 'width', 15);
-    expect(divs[0].style.width).to.equal('15px');
-    expect(divs[1].style.width).to.equal('15px');
-    return expect(divs[2].style.width).to.equal('15px');
-  });
-  test("A style object can be passed", function() {
-    Css(divs[0], {
-      'position': 'fixed',
-      'width': '55',
-      'height': 12,
-      'opacity': 0.8
-    });
-    expect(divs[0].style.position).to.equal('fixed');
-    expect(divs[0].style.width).to.equal('55px');
-    expect(divs[0].style.height).to.equal('12px');
-    return expect(divs[0].style.opacity).to.equal('0.8');
-  });
-  test("An iterable collection of elements can be passed along with a style object", function() {
-    Css(divs, {
-      width: '32px',
-      height: '99px'
-    });
-    expect(divs[0].style.width).to.equal('32px');
-    expect(divs[1].style.width).to.equal('32px');
-    expect(divs[2].style.width).to.equal('32px');
-    expect(divs[0].style.height).to.equal('99px');
-    expect(divs[1].style.height).to.equal('99px');
-    return expect(divs[2].style.height).to.equal('99px');
-  });
-  test("Kebab-cased/camel-cased properties will be normalized", function() {
-    Css(divs[0], 'margin-top', '10px');
-    expect(divs[0].style.marginTop).to.equal('10px');
-    expect(styles[0].marginTop).to.equal('10px');
-    Css(divs[0], 'marginBottom', '12px');
-    expect(divs[0].style.marginBottom).to.equal('12px');
-    return expect(styles[0].marginBottom).to.equal('12px');
-  });
-  test("Invalid properties will be ignored", function() {
-    Css(divs[1], 'topMargin', '25px');
-    expect(divs[0].style.topMargin).not.to.exist;
-    return expect(styles[0].topMargin).not.to.exist;
-  });
-  test("If a value is not provided, the current computed value for the selected property will be returned", function() {
-    var computedValue;
-    Css(divs[2], 'marginTop', '5vh');
-    computedValue = styles[2].marginTop;
-    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
-    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
-    expect(Css(divs[2], 'marginTop')).to.equal(styles[2].marginTop);
-    return expect(Css(divs[2], 'topMargin')).to.equal(void 0);
-  });
-  test("If a null value is provided for a property, the property will be deleted", function() {
-    Css(divs[1], 'marginTop', '10px');
-    expect(divs[1].style.marginTop).to.equal('10px');
-    expect(styles[1].marginTop).to.equal('10px');
-    Css(divs[1], 'marginTop', null);
-    expect(divs[1].style.marginTop).to.equal('');
-    expect(styles[1].marginTop).to.equal('0px');
-    Css(divs[1], 'marginTop', '10px');
-    expect(divs[1].style.marginTop).to.equal('10px');
-    expect(styles[1].marginTop).to.equal('10px');
-    Css(divs[1], {
-      'marginTop': null
-    });
-    expect(divs[1].style.marginTop).to.equal('');
-    return expect(styles[1].marginTop).to.equal('0px');
-  });
-  return suite("animation", function() {
-    test(".animation(name, keyframes) will create a @keyframes rule", function() {
-      var lastEl;
-      lastEl = $(document.head).children().last()[0];
-      expect(lastEl.id).not.to.equal('quickcss');
-      Css.animation('myAnimation', {
-        '0%': {
-          transform: 'rotate(0deg)',
-          opacity: 1,
-          width: 100,
-          marginTop: 5
-        },
-        '50%': {
-          width: 150
-        },
-        '100%': {
-          transform: 'rotate(360deg)',
-          opacity: 0.5,
-          width: 50
-        }
-      });
-      lastEl = $(document.head).children().last()[0];
-      expect(lastEl.id).to.equal('quickcss');
-      expect(lastEl.innerHTML).to.include('keyframes myAnimation {');
-      expect(lastEl.innerHTML).to.include('0% {');
-      expect(lastEl.innerHTML).to.include('transform: rotate(0deg)');
-      expect(lastEl.innerHTML).to.include('opacity: 1');
-      expect(lastEl.innerHTML).to.include('width: 100px');
-      expect(lastEl.innerHTML).to.include('margin-top: 5px');
-      expect(lastEl.innerHTML).to.include('50% {');
-      expect(lastEl.innerHTML).to.include('width: 150px');
-      expect(lastEl.innerHTML).to.include('100% {');
-      expect(lastEl.innerHTML).to.include('transform: rotate(360deg)');
-      expect(lastEl.innerHTML).to.include('opacity: 0.5');
-      return expect(lastEl.innerHTML).to.include('width: 50px');
-    });
-    return test("calling .animation() with the same args multiple times should only insert the keyframes once", function() {
-      var animation, lastEl, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7;
-      animation = {
-        '0%': {
-          transform: 'rotate(0deg)'
-        },
-        '100%': {
-          transform: 'rotate(360deg)'
-        }
-      };
-      Css.animation('someAnimation', animation);
-      lastEl = $(document.head).children().last()[0];
-      expect(lastEl.innerHTML).to.include('keyframes someAnimation {');
-      expect((ref = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref.length : void 0).to.equal(1);
-      Css.animation('someAnimation', animation);
-      expect((ref1 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref1.length : void 0).to.equal(1);
-      Css.animation('someAnimation2', animation);
-      expect((ref2 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref2.length : void 0).to.equal(2);
-      expect((ref3 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref3.length : void 0).to.equal(1);
-      Css.animation('someAnimation2', animation);
-      expect((ref4 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref4.length : void 0).to.equal(2);
-      expect((ref5 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref5.length : void 0).to.equal(1);
-      Css.animation('someAnimation2', {
-        'from': {
-          width: 50
-        },
-        'to': {
-          width: 100
-        }
-      });
-      expect((ref6 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref6.length : void 0).to.equal(3);
-      return expect((ref7 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref7.length : void 0).to.equal(2);
-    });
-  });
-});
-
-var POSSIBLE_PREFIXES, QUAD_SHORTHANDS, REQUIRES_UNIT_VALUE, directions;
-
-POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
-
-REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
-
-QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
-
-directions = ['top', 'bottom', 'left', 'right'];
-
-QUAD_SHORTHANDS.forEach(function(property) {
-  var direction, i, len;
-  REQUIRES_UNIT_VALUE.push(property);
-  for (i = 0, len = directions.length; i < len; i++) {
-    direction = directions[i];
-    REQUIRES_UNIT_VALUE.push(property + '-' + direction);
-  }
-});
-
-;
-
-;
-return module.exports;
-},
-34: function (require, module, exports) {
-/*!
- * Chai - getOwnEnumerableProperties utility
- * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/*!
- * Module dependancies
- */
-
-var getOwnEnumerablePropertySymbols = require(33);
-
-/**
- * ### .getOwnEnumerableProperties(object)
- *
- * This allows the retrieval of directly-owned enumerable property names and
- * symbols of an object. This function is necessary because Object.keys only
- * returns enumerable property names, not enumerable property symbols.
- *
- * @param {Object} object
- * @returns {Array}
- * @namespace Utils
- * @name getOwnEnumerableProperties
- * @api public
- */
-
-module.exports = function getOwnEnumerableProperties(obj) {
-  return Object.keys(obj).concat(getOwnEnumerablePropertySymbols(obj));
-};
-;
-return module.exports;
-},
-16: function (require, module, exports) {
-'use strict';
-
-/* !
- * Chai - pathval utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * @see https://github.com/logicalparadox/filtr
- * MIT Licensed
- */
-
-/**
- * ### .hasProperty(object, name)
- *
- * This allows checking whether an object has own
- * or inherited from prototype chain named property.
- *
- * Basically does the same thing as the `in`
- * operator but works properly with null/undefined values
- * and other primitives.
- *
- *     var obj = {
- *         arr: ['a', 'b', 'c']
- *       , str: 'Hello'
- *     }
- *
- * The following would be the results.
- *
- *     hasProperty(obj, 'str');  // true
- *     hasProperty(obj, 'constructor');  // true
- *     hasProperty(obj, 'bar');  // false
- *
- *     hasProperty(obj.str, 'length'); // true
- *     hasProperty(obj.str, 1);  // true
- *     hasProperty(obj.str, 5);  // false
- *
- *     hasProperty(obj.arr, 'length');  // true
- *     hasProperty(obj.arr, 2);  // true
- *     hasProperty(obj.arr, 3);  // false
- *
- * @param {Object} object
- * @param {String|Symbol} name
- * @returns {Boolean} whether it exists
- * @namespace Utils
- * @name hasProperty
- * @api public
- */
-
-function hasProperty(obj, name) {
-  if (typeof obj === 'undefined' || obj === null) {
-    return false;
-  }
-
-  // The `in` operator does not work with primitives.
-  return name in Object(obj);
-}
-
-/* !
- * ## parsePath(path)
- *
- * Helper function used to parse string object
- * paths. Use in conjunction with `internalGetPathValue`.
- *
- *      var parsed = parsePath('myobject.property.subprop');
- *
- * ### Paths:
- *
- * * Can be infinitely deep and nested.
- * * Arrays are also valid using the formal `myobject.document[3].property`.
- * * Literal dots and brackets (not delimiter) must be backslash-escaped.
- *
- * @param {String} path
- * @returns {Object} parsed
- * @api private
- */
-
-function parsePath(path) {
-  var str = path.replace(/([^\\])\[/g, '$1.[');
-  var parts = str.match(/(\\\.|[^.]+?)+/g);
-  return parts.map(function mapMatches(value) {
-    var regexp = /^\[(\d+)\]$/;
-    var mArr = regexp.exec(value);
-    var parsed = null;
-    if (mArr) {
-      parsed = { i: parseFloat(mArr[1]) };
-    } else {
-      parsed = { p: value.replace(/\\([.\[\]])/g, '$1') };
-    }
-
-    return parsed;
-  });
-}
-
-/* !
- * ## internalGetPathValue(obj, parsed[, pathDepth])
- *
- * Helper companion function for `.parsePath` that returns
- * the value located at the parsed address.
- *
- *      var value = getPathValue(obj, parsed);
- *
- * @param {Object} object to search against
- * @param {Object} parsed definition from `parsePath`.
- * @param {Number} depth (nesting level) of the property we want to retrieve
- * @returns {Object|Undefined} value
- * @api private
- */
-
-function internalGetPathValue(obj, parsed, pathDepth) {
-  var temporaryValue = obj;
-  var res = null;
-  pathDepth = (typeof pathDepth === 'undefined' ? parsed.length : pathDepth);
-
-  for (var i = 0; i < pathDepth; i++) {
-    var part = parsed[i];
-    if (temporaryValue) {
-      if (typeof part.p === 'undefined') {
-        temporaryValue = temporaryValue[part.i];
-      } else {
-        temporaryValue = temporaryValue[part.p];
-      }
-
-      if (i === (pathDepth - 1)) {
-        res = temporaryValue;
-      }
-    }
-  }
-
-  return res;
-}
-
-/* !
- * ## internalSetPathValue(obj, value, parsed)
- *
- * Companion function for `parsePath` that sets
- * the value located at a parsed address.
- *
- *  internalSetPathValue(obj, 'value', parsed);
- *
- * @param {Object} object to search and define on
- * @param {*} value to use upon set
- * @param {Object} parsed definition from `parsePath`
- * @api private
- */
-
-function internalSetPathValue(obj, val, parsed) {
-  var tempObj = obj;
-  var pathDepth = parsed.length;
-  var part = null;
-  // Here we iterate through every part of the path
-  for (var i = 0; i < pathDepth; i++) {
-    var propName = null;
-    var propVal = null;
-    part = parsed[i];
-
-    // If it's the last part of the path, we set the 'propName' value with the property name
-    if (i === (pathDepth - 1)) {
-      propName = typeof part.p === 'undefined' ? part.i : part.p;
-      // Now we set the property with the name held by 'propName' on object with the desired val
-      tempObj[propName] = val;
-    } else if (typeof part.p !== 'undefined' && tempObj[part.p]) {
-      tempObj = tempObj[part.p];
-    } else if (typeof part.i !== 'undefined' && tempObj[part.i]) {
-      tempObj = tempObj[part.i];
-    } else {
-      // If the obj doesn't have the property we create one with that name to define it
-      var next = parsed[i + 1];
-      // Here we set the name of the property which will be defined
-      propName = typeof part.p === 'undefined' ? part.i : part.p;
-      // Here we decide if this property will be an array or a new object
-      propVal = typeof next.p === 'undefined' ? [] : {};
-      tempObj[propName] = propVal;
-      tempObj = tempObj[propName];
-    }
-  }
-}
-
-/**
- * ### .getPathInfo(object, path)
- *
- * This allows the retrieval of property info in an
- * object given a string path.
- *
- * The path info consists of an object with the
- * following properties:
- *
- * * parent - The parent object of the property referenced by `path`
- * * name - The name of the final property, a number if it was an array indexer
- * * value - The value of the property, if it exists, otherwise `undefined`
- * * exists - Whether the property exists or not
- *
- * @param {Object} object
- * @param {String} path
- * @returns {Object} info
- * @namespace Utils
- * @name getPathInfo
- * @api public
- */
-
-function getPathInfo(obj, path) {
-  var parsed = parsePath(path);
-  var last = parsed[parsed.length - 1];
-  var info = {
-    parent: parsed.length > 1 ? internalGetPathValue(obj, parsed, parsed.length - 1) : obj,
-    name: last.p || last.i,
-    value: internalGetPathValue(obj, parsed),
-  };
-  info.exists = hasProperty(info.parent, info.name);
-
-  return info;
-}
-
-/**
- * ### .getPathValue(object, path)
- *
- * This allows the retrieval of values in an
- * object given a string path.
- *
- *     var obj = {
- *         prop1: {
- *             arr: ['a', 'b', 'c']
- *           , str: 'Hello'
- *         }
- *       , prop2: {
- *             arr: [ { nested: 'Universe' } ]
- *           , str: 'Hello again!'
- *         }
- *     }
- *
- * The following would be the results.
- *
- *     getPathValue(obj, 'prop1.str'); // Hello
- *     getPathValue(obj, 'prop1.att[2]'); // b
- *     getPathValue(obj, 'prop2.arr[0].nested'); // Universe
- *
- * @param {Object} object
- * @param {String} path
- * @returns {Object} value or `undefined`
- * @namespace Utils
- * @name getPathValue
- * @api public
- */
-
-function getPathValue(obj, path) {
-  var info = getPathInfo(obj, path);
-  return info.value;
-}
-
-/**
- * ### .setPathValue(object, path, value)
- *
- * Define the value in an object at a given string path.
- *
- * ```js
- * var obj = {
- *     prop1: {
- *         arr: ['a', 'b', 'c']
- *       , str: 'Hello'
- *     }
- *   , prop2: {
- *         arr: [ { nested: 'Universe' } ]
- *       , str: 'Hello again!'
- *     }
- * };
- * ```
- *
- * The following would be acceptable.
- *
- * ```js
- * var properties = require('tea-properties');
- * properties.set(obj, 'prop1.str', 'Hello Universe!');
- * properties.set(obj, 'prop1.arr[2]', 'B');
- * properties.set(obj, 'prop2.arr[0].nested.value', { hello: 'universe' });
- * ```
- *
- * @param {Object} object
- * @param {String} path
- * @param {Mixed} value
- * @api private
- */
-
-function setPathValue(obj, path, val) {
-  var parsed = parsePath(path);
-  internalSetPathValue(obj, val, parsed);
-  return obj;
-}
-
-module.exports = {
-  hasProperty: hasProperty,
-  getPathInfo: getPathInfo,
-  getPathValue: getPathValue,
-  setPathValue: setPathValue,
-};
-;
-return module.exports;
-},
-26: function (require, module, exports) {
-/*!
- * Chai - addProperty utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var chai = require(4);
-var flag = require(23);
-var isProxyEnabled = require(38);
-var transferFlags = require(24);
-
-/**
- * ### .addProperty(ctx, name, getter)
- *
- * Adds a property to the prototype of an object.
- *
- *     utils.addProperty(chai.Assertion.prototype, 'foo', function () {
- *       var obj = utils.flag(this, 'object');
- *       new chai.Assertion(obj).to.be.instanceof(Foo);
- *     });
- *
- * Can also be accessed directly from `chai.Assertion`.
- *
- *     chai.Assertion.addProperty('foo', fn);
- *
- * Then can be used as any other assertion.
- *
- *     expect(myFoo).to.be.foo;
- *
- * @param {Object} ctx object to which the property is added
- * @param {String} name of property to add
- * @param {Function} getter function to be used for name
- * @namespace Utils
- * @name addProperty
- * @api public
- */
-
-module.exports = function addProperty(ctx, name, getter) {
-  getter = getter === undefined ? new Function() : getter;
-
-  Object.defineProperty(ctx, name,
-    { get: function propertyGetter() {
-        // Setting the `ssfi` flag to `propertyGetter` causes this function to
-        // be the starting point for removing implementation frames from the
-        // stack trace of a failed assertion.
-        //
-        // However, we only want to use this function as the starting point if
-        // the `lockSsfi` flag isn't set and proxy protection is disabled.
-        //
-        // If the `lockSsfi` flag is set, then either this assertion has been
-        // overwritten by another assertion, or this assertion is being invoked
-        // from inside of another assertion. In the first case, the `ssfi` flag
-        // has already been set by the overwriting assertion. In the second
-        // case, the `ssfi` flag has already been set by the outer assertion.
-        //
-        // If proxy protection is enabled, then the `ssfi` flag has already been
-        // set by the proxy getter.
-        if (!isProxyEnabled() && !flag(this, 'lockSsfi')) {
-          flag(this, 'ssfi', propertyGetter);
-        }
-
-        var result = getter.call(this);
-        if (result !== undefined)
-          return result;
-
-        var newAssertion = new chai.Assertion();
-        transferFlags(this, newAssertion);
-        return newAssertion;
-      }
-    , configurable: true
-  });
-};
-;
-return module.exports;
-},
-6: function (require, module, exports) {
-'use strict';
-
-/* !
- * type-detect
- * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-var promiseExists = typeof Promise === 'function';
-var globalObject = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : self; // eslint-disable-line
-var isDom = 'location' in globalObject && 'document' in globalObject;
-var symbolExists = typeof Symbol !== 'undefined';
-var mapExists = typeof Map !== 'undefined';
-var setExists = typeof Set !== 'undefined';
-var weakMapExists = typeof WeakMap !== 'undefined';
-var weakSetExists = typeof WeakSet !== 'undefined';
-var dataViewExists = typeof DataView !== 'undefined';
-var symbolIteratorExists = symbolExists && typeof Symbol.iterator !== 'undefined';
-var symbolToStringTagExists = symbolExists && typeof Symbol.toStringTag !== 'undefined';
-var setEntriesExists = setExists && typeof Set.prototype.entries === 'function';
-var mapEntriesExists = mapExists && typeof Map.prototype.entries === 'function';
-var setIteratorPrototype = setEntriesExists && Object.getPrototypeOf(new Set().entries());
-var mapIteratorPrototype = mapEntriesExists && Object.getPrototypeOf(new Map().entries());
-var arrayIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
-var arrayIteratorPrototype = arrayIteratorExists && Object.getPrototypeOf([][Symbol.iterator]());
-var stringIteratorExists = symbolIteratorExists && typeof String.prototype[Symbol.iterator] === 'function';
-var stringIteratorPrototype = stringIteratorExists && Object.getPrototypeOf(''[Symbol.iterator]());
-var toStringLeftSliceLength = 8;
-var toStringRightSliceLength = -1;
-/**
- * ### typeOf (obj)
- *
- * Uses `Object.prototype.toString` to determine the type of an object,
- * normalising behaviour across engine versions & well optimised.
- *
- * @param {Mixed} object
- * @return {String} object type
- * @api public
- */
-module.exports = function typeDetect(obj) {
-  /* ! Speed optimisation
-   * Pre:
-   *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
-   *   boolean literal    x 1,424,138 ops/sec ±4.54% (75 runs sampled)
-   *   number literal     x 1,653,153 ops/sec ±1.91% (82 runs sampled)
-   *   undefined          x 9,978,660 ops/sec ±1.92% (75 runs sampled)
-   *   function           x 2,556,769 ops/sec ±1.73% (77 runs sampled)
-   * Post:
-   *   string literal     x 38,564,796 ops/sec ±1.15% (79 runs sampled)
-   *   boolean literal    x 31,148,940 ops/sec ±1.10% (79 runs sampled)
-   *   number literal     x 32,679,330 ops/sec ±1.90% (78 runs sampled)
-   *   undefined          x 32,363,368 ops/sec ±1.07% (82 runs sampled)
-   *   function           x 31,296,870 ops/sec ±0.96% (83 runs sampled)
-   */
-  var typeofObj = typeof obj;
-  if (typeofObj !== 'object') {
-    return typeofObj;
-  }
-
-  /* ! Speed optimisation
-   * Pre:
-   *   null               x 28,645,765 ops/sec ±1.17% (82 runs sampled)
-   * Post:
-   *   null               x 36,428,962 ops/sec ±1.37% (84 runs sampled)
-   */
-  if (obj === null) {
-    return 'null';
-  }
-
-  /* ! Spec Conformance
-   * Test: `Object.prototype.toString.call(window)``
-   *  - Node === "[object global]"
-   *  - Chrome === "[object global]"
-   *  - Firefox === "[object Window]"
-   *  - PhantomJS === "[object Window]"
-   *  - Safari === "[object Window]"
-   *  - IE 11 === "[object Window]"
-   *  - IE Edge === "[object Window]"
-   * Test: `Object.prototype.toString.call(this)``
-   *  - Chrome Worker === "[object global]"
-   *  - Firefox Worker === "[object DedicatedWorkerGlobalScope]"
-   *  - Safari Worker === "[object DedicatedWorkerGlobalScope]"
-   *  - IE 11 Worker === "[object WorkerGlobalScope]"
-   *  - IE Edge Worker === "[object WorkerGlobalScope]"
-   */
-  if (obj === globalObject) {
-    return 'global';
-  }
-
-  /* ! Speed optimisation
-   * Pre:
-   *   array literal      x 2,888,352 ops/sec ±0.67% (82 runs sampled)
-   * Post:
-   *   array literal      x 22,479,650 ops/sec ±0.96% (81 runs sampled)
-   */
-  if (
-    Array.isArray(obj) &&
-    (symbolToStringTagExists === false || !(Symbol.toStringTag in obj))
-  ) {
-    return 'Array';
-  }
-
-  if (isDom) {
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/browsers.html#location)
-     * WhatWG HTML$7.7.3 - The `Location` interface
-     * Test: `Object.prototype.toString.call(window.location)``
-     *  - IE <=11 === "[object Object]"
-     *  - IE Edge <=13 === "[object Object]"
-     */
-    if (obj === globalObject.location) {
-      return 'Location';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#document)
-     * WhatWG HTML$3.1.1 - The `Document` object
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26809268)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     *       WhatWG HTML states:
-     *         > For historical reasons, Window objects must also have a
-     *         > writable, configurable, non-enumerable property named
-     *         > HTMLDocument whose value is the Document interface object.
-     * Test: `Object.prototype.toString.call(document)``
-     *  - Chrome === "[object HTMLDocument]"
-     *  - Firefox === "[object HTMLDocument]"
-     *  - Safari === "[object HTMLDocument]"
-     *  - IE <=10 === "[object Document]"
-     *  - IE 11 === "[object HTMLDocument]"
-     *  - IE Edge <=13 === "[object HTMLDocument]"
-     */
-    if (obj === globalObject.document) {
-      return 'Document';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
-     * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
-     *  - IE <=10 === "[object MSMimeTypesCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).mimeTypes) {
-      return 'MimeTypeArray';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
-     * Test: `Object.prototype.toString.call(navigator.plugins)``
-     *  - IE <=10 === "[object MSPluginsCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).plugins) {
-      return 'PluginArray';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
-     * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
-     *  - IE <=10 === "[object HTMLBlockElement]"
-     */
-    if (obj instanceof HTMLElement && obj.tagName === 'BLOCKQUOTE') {
-      return 'HTMLQuoteElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltabledatacellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('td'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (obj instanceof HTMLElement && obj.tagName === 'TD') {
-      return 'HTMLTableDataCellElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltableheadercellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('th'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (obj instanceof HTMLElement && obj.tagName === 'TH') {
-      return 'HTMLTableHeaderCellElement';
-    }
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   Float64Array       x 625,644 ops/sec ±1.58% (80 runs sampled)
-  *   Float32Array       x 1,279,852 ops/sec ±2.91% (77 runs sampled)
-  *   Uint32Array        x 1,178,185 ops/sec ±1.95% (83 runs sampled)
-  *   Uint16Array        x 1,008,380 ops/sec ±2.25% (80 runs sampled)
-  *   Uint8Array         x 1,128,040 ops/sec ±2.11% (81 runs sampled)
-  *   Int32Array         x 1,170,119 ops/sec ±2.88% (80 runs sampled)
-  *   Int16Array         x 1,176,348 ops/sec ±5.79% (86 runs sampled)
-  *   Int8Array          x 1,058,707 ops/sec ±4.94% (77 runs sampled)
-  *   Uint8ClampedArray  x 1,110,633 ops/sec ±4.20% (80 runs sampled)
-  * Post:
-  *   Float64Array       x 7,105,671 ops/sec ±13.47% (64 runs sampled)
-  *   Float32Array       x 5,887,912 ops/sec ±1.46% (82 runs sampled)
-  *   Uint32Array        x 6,491,661 ops/sec ±1.76% (79 runs sampled)
-  *   Uint16Array        x 6,559,795 ops/sec ±1.67% (82 runs sampled)
-  *   Uint8Array         x 6,463,966 ops/sec ±1.43% (85 runs sampled)
-  *   Int32Array         x 5,641,841 ops/sec ±3.49% (81 runs sampled)
-  *   Int16Array         x 6,583,511 ops/sec ±1.98% (80 runs sampled)
-  *   Int8Array          x 6,606,078 ops/sec ±1.74% (81 runs sampled)
-  *   Uint8ClampedArray  x 6,602,224 ops/sec ±1.77% (83 runs sampled)
-  */
-  var stringTag = (symbolToStringTagExists && obj[Symbol.toStringTag]);
-  if (typeof stringTag === 'string') {
-    return stringTag;
-  }
-
-  var objPrototype = Object.getPrototypeOf(obj);
-  /* ! Speed optimisation
-  * Pre:
-  *   regex literal      x 1,772,385 ops/sec ±1.85% (77 runs sampled)
-  *   regex constructor  x 2,143,634 ops/sec ±2.46% (78 runs sampled)
-  * Post:
-  *   regex literal      x 3,928,009 ops/sec ±0.65% (78 runs sampled)
-  *   regex constructor  x 3,931,108 ops/sec ±0.58% (84 runs sampled)
-  */
-  if (objPrototype === RegExp.prototype) {
-    return 'RegExp';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   date               x 2,130,074 ops/sec ±4.42% (68 runs sampled)
-  * Post:
-  *   date               x 3,953,779 ops/sec ±1.35% (77 runs sampled)
-  */
-  if (objPrototype === Date.prototype) {
-    return 'Date';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-promise.prototype-@@tostringtag)
-   * ES6$25.4.5.4 - Promise.prototype[@@toStringTag] should be "Promise":
-   * Test: `Object.prototype.toString.call(Promise.resolve())``
-   *  - Chrome <=47 === "[object Object]"
-   *  - Edge <=20 === "[object Object]"
-   *  - Firefox 29-Latest === "[object Promise]"
-   *  - Safari 7.1-Latest === "[object Promise]"
-   */
-  if (promiseExists && objPrototype === Promise.prototype) {
-    return 'Promise';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   set                x 2,222,186 ops/sec ±1.31% (82 runs sampled)
-  * Post:
-  *   set                x 4,545,879 ops/sec ±1.13% (83 runs sampled)
-  */
-  if (setExists && objPrototype === Set.prototype) {
-    return 'Set';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   map                x 2,396,842 ops/sec ±1.59% (81 runs sampled)
-  * Post:
-  *   map                x 4,183,945 ops/sec ±6.59% (82 runs sampled)
-  */
-  if (mapExists && objPrototype === Map.prototype) {
-    return 'Map';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   weakset            x 1,323,220 ops/sec ±2.17% (76 runs sampled)
-  * Post:
-  *   weakset            x 4,237,510 ops/sec ±2.01% (77 runs sampled)
-  */
-  if (weakSetExists && objPrototype === WeakSet.prototype) {
-    return 'WeakSet';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   weakmap            x 1,500,260 ops/sec ±2.02% (78 runs sampled)
-  * Post:
-  *   weakmap            x 3,881,384 ops/sec ±1.45% (82 runs sampled)
-  */
-  if (weakMapExists && objPrototype === WeakMap.prototype) {
-    return 'WeakMap';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-dataview.prototype-@@tostringtag)
-   * ES6$24.2.4.21 - DataView.prototype[@@toStringTag] should be "DataView":
-   * Test: `Object.prototype.toString.call(new DataView(new ArrayBuffer(1)))``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (dataViewExists && objPrototype === DataView.prototype) {
-    return 'DataView';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%mapiteratorprototype%-@@tostringtag)
-   * ES6$23.1.5.2.2 - %MapIteratorPrototype%[@@toStringTag] should be "Map Iterator":
-   * Test: `Object.prototype.toString.call(new Map().entries())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (mapExists && objPrototype === mapIteratorPrototype) {
-    return 'Map Iterator';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%setiteratorprototype%-@@tostringtag)
-   * ES6$23.2.5.2.2 - %SetIteratorPrototype%[@@toStringTag] should be "Set Iterator":
-   * Test: `Object.prototype.toString.call(new Set().entries())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (setExists && objPrototype === setIteratorPrototype) {
-    return 'Set Iterator';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%arrayiteratorprototype%-@@tostringtag)
-   * ES6$22.1.5.2.2 - %ArrayIteratorPrototype%[@@toStringTag] should be "Array Iterator":
-   * Test: `Object.prototype.toString.call([][Symbol.iterator]())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (arrayIteratorExists && objPrototype === arrayIteratorPrototype) {
-    return 'Array Iterator';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%stringiteratorprototype%-@@tostringtag)
-   * ES6$21.1.5.2.2 - %StringIteratorPrototype%[@@toStringTag] should be "String Iterator":
-   * Test: `Object.prototype.toString.call(''[Symbol.iterator]())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (stringIteratorExists && objPrototype === stringIteratorPrototype) {
-    return 'String Iterator';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   object from null   x 2,424,320 ops/sec ±1.67% (76 runs sampled)
-  * Post:
-  *   object from null   x 5,838,000 ops/sec ±0.99% (84 runs sampled)
-  */
-  if (objPrototype === null) {
-    return 'Object';
-  }
-
-  return Object
-    .prototype
-    .toString
-    .call(obj)
-    .slice(toStringLeftSliceLength, toStringRightSliceLength);
-};
-
-module.exports.typeDetect = module.exports;
-;
-return module.exports;
-},
-24: function (require, module, exports) {
-/*!
- * Chai - transferFlags utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/**
- * ### .transferFlags(assertion, object, includeAll = true)
- *
- * Transfer all the flags for `assertion` to `object`. If
- * `includeAll` is set to `false`, then the base Chai
- * assertion flags (namely `object`, `ssfi`, `lockSsfi`,
- * and `message`) will not be transferred.
- *
- *
- *     var newAssertion = new Assertion();
- *     utils.transferFlags(assertion, newAssertion);
- *
- *     var anotherAsseriton = new Assertion(myObj);
- *     utils.transferFlags(assertion, anotherAssertion, false);
- *
- * @param {Assertion} assertion the assertion to transfer the flags from
- * @param {Object} object the object to transfer the flags to; usually a new assertion
- * @param {Boolean} includeAll
- * @namespace Utils
- * @name transferFlags
- * @api private
- */
-
-module.exports = function transferFlags(assertion, object, includeAll) {
-  var flags = assertion.__flags || (assertion.__flags = Object.create(null));
-
-  if (!object.__flags) {
-    object.__flags = Object.create(null);
-  }
-
-  includeAll = arguments.length === 3 ? includeAll : true;
-
-  for (var flag in flags) {
-    if (includeAll ||
-        (flag !== 'object' && flag !== 'ssfi' && flag !== 'lockSsfi' && flag != 'message')) {
-      object.__flags[flag] = flags[flag];
-    }
-  }
-};
-;
-return module.exports;
-},
-31: function (require, module, exports) {
-/*!
- * Chai - overwriteChainableMethod utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var chai = require(4);
-var transferFlags = require(24);
-
-/**
- * ### .overwriteChainableMethod(ctx, name, method, chainingBehavior)
- *
- * Overwites an already existing chainable method
- * and provides access to the previous function or
- * property.  Must return functions to be used for
- * name.
- *
- *     utils.overwriteChainableMethod(chai.Assertion.prototype, 'lengthOf',
- *       function (_super) {
- *       }
- *     , function (_super) {
- *       }
- *     );
- *
- * Can also be accessed directly from `chai.Assertion`.
- *
- *     chai.Assertion.overwriteChainableMethod('foo', fn, fn);
- *
- * Then can be used as any other assertion.
- *
- *     expect(myFoo).to.have.lengthOf(3);
- *     expect(myFoo).to.have.lengthOf.above(3);
- *
- * @param {Object} ctx object whose method / property is to be overwritten
- * @param {String} name of method / property to overwrite
- * @param {Function} method function that returns a function to be used for name
- * @param {Function} chainingBehavior function that returns a function to be used for property
- * @namespace Utils
- * @name overwriteChainableMethod
- * @api public
- */
-
-module.exports = function overwriteChainableMethod(ctx, name, method, chainingBehavior) {
-  var chainableBehavior = ctx.__methods[name];
-
-  var _chainingBehavior = chainableBehavior.chainingBehavior;
-  chainableBehavior.chainingBehavior = function overwritingChainableMethodGetter() {
-    var result = chainingBehavior(_chainingBehavior).call(this);
-    if (result !== undefined) {
-      return result;
-    }
-
-    var newAssertion = new chai.Assertion();
-    transferFlags(this, newAssertion);
-    return newAssertion;
-  };
-
-  var _method = chainableBehavior.method;
-  chainableBehavior.method = function overwritingChainableMethodWrapper() {
-    var result = method(_method).apply(this, arguments);
-    if (result !== undefined) {
-      return result;
-    }
-
-    var newAssertion = new chai.Assertion();
-    transferFlags(this, newAssertion);
-    return newAssertion;
-  };
-};
-;
-return module.exports;
-},
-5: function (require, module, exports) {
-'use strict';
-/* globals Symbol: true, Uint8Array: true, WeakMap: true */
-/*!
- * deep-eql
- * Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/*!
- * Module dependencies
- */
-
-var type = require(15);
-function FakeMap() {
-  this.clear();
-}
-FakeMap.prototype = {
-  clear: function clearMap() {
-    this.keys = [];
-    this.values = [];
-    return this;
-  },
-  set: function setMap(key, value) {
-    var index = this.keys.indexOf(key);
-    if (index >= 0) {
-      this.values[index] = value;
-    } else {
-      this.keys.push(key);
-      this.values.push(value);
-    }
-    return this;
-  },
-  get: function getMap(key) {
-    return this.values[this.keys.indexOf(key)];
-  },
-  delete: function deleteMap(key) {
-    var index = this.keys.indexOf(key);
-    if (index >= 0) {
-      this.values = this.values.slice(0, index).concat(this.values.slice(index + 1));
-      this.keys = this.keys.slice(0, index).concat(this.keys.slice(index + 1));
-    }
-    return this;
-  },
-};
-
-var MemoizeMap = null;
-if (typeof WeakMap === 'function') {
-  MemoizeMap = WeakMap;
-} else {
-  MemoizeMap = FakeMap;
-}
-
-/*!
- * Check to see if the MemoizeMap has recorded a result of the two operands
- *
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @param {MemoizeMap} memoizeMap
- * @returns {Boolean|null} result
-*/
-function memoizeCompare(leftHandOperand, rightHandOperand, memoizeMap) {
-  // Technically, WeakMap keys can *only* be objects, not primitives.
-  if (!memoizeMap || isPrimitive(leftHandOperand) || isPrimitive(rightHandOperand)) {
-    return null;
-  }
-  var leftHandMap = memoizeMap.get(leftHandOperand);
-  if (leftHandMap) {
-    var result = leftHandMap.get(rightHandOperand);
-    if (typeof result === 'boolean') {
-      return result;
-    }
-  }
-  return null;
-}
-
-/*!
- * Set the result of the equality into the MemoizeMap
- *
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @param {MemoizeMap} memoizeMap
- * @param {Boolean} result
-*/
-function memoizeSet(leftHandOperand, rightHandOperand, memoizeMap, result) {
-  // Technically, WeakMap keys can *only* be objects, not primitives.
-  if (!memoizeMap || isPrimitive(leftHandOperand) || isPrimitive(rightHandOperand)) {
-    return;
-  }
-  var leftHandMap = memoizeMap.get(leftHandOperand);
-  if (leftHandMap) {
-    leftHandMap.set(rightHandOperand, result);
-  } else {
-    leftHandMap = new MemoizeMap();
-    leftHandMap.set(rightHandOperand, result);
-    memoizeMap.set(leftHandOperand, leftHandMap);
-  }
-}
-
-/*!
- * Primary Export
- */
-
-module.exports = deepEqual;
-module.exports.MemoizeMap = MemoizeMap;
-
-/**
- * Assert deeply nested sameValue equality between two objects of any type.
- *
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @param {Object} [options] (optional) Additional options
- * @param {Array} [options.comparator] (optional) Override default algorithm, determining custom equality.
- * @param {Array} [options.memoize] (optional) Provide a custom memoization object which will cache the results of
-    complex objects for a speed boost. By passing `false` you can disable memoization, but this will cause circular
-    references to blow the stack.
- * @return {Boolean} equal match
- */
-function deepEqual(leftHandOperand, rightHandOperand, options) {
-  // If we have a comparator, we can't assume anything; so bail to its check first.
-  if (options && options.comparator) {
-    return extensiveDeepEqual(leftHandOperand, rightHandOperand, options);
-  }
-
-  var simpleResult = simpleEqual(leftHandOperand, rightHandOperand);
-  if (simpleResult !== null) {
-    return simpleResult;
-  }
-
-  // Deeper comparisons are pushed through to a larger function
-  return extensiveDeepEqual(leftHandOperand, rightHandOperand, options);
-}
-
-/**
- * Many comparisons can be canceled out early via simple equality or primitive checks.
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @return {Boolean|null} equal match
- */
-function simpleEqual(leftHandOperand, rightHandOperand) {
-  // Equal references (except for Numbers) can be returned early
-  if (leftHandOperand === rightHandOperand) {
-    // Handle +-0 cases
-    return leftHandOperand !== 0 || 1 / leftHandOperand === 1 / rightHandOperand;
-  }
-
-  // handle NaN cases
-  if (
-    leftHandOperand !== leftHandOperand && // eslint-disable-line no-self-compare
-    rightHandOperand !== rightHandOperand // eslint-disable-line no-self-compare
-  ) {
-    return true;
-  }
-
-  // Anything that is not an 'object', i.e. symbols, functions, booleans, numbers,
-  // strings, and undefined, can be compared by reference.
-  if (isPrimitive(leftHandOperand) || isPrimitive(rightHandOperand)) {
-    // Easy out b/c it would have passed the first equality check
-    return false;
-  }
-  return null;
-}
-
-/*!
- * The main logic of the `deepEqual` function.
- *
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @param {Object} [options] (optional) Additional options
- * @param {Array} [options.comparator] (optional) Override default algorithm, determining custom equality.
- * @param {Array} [options.memoize] (optional) Provide a custom memoization object which will cache the results of
-    complex objects for a speed boost. By passing `false` you can disable memoization, but this will cause circular
-    references to blow the stack.
- * @return {Boolean} equal match
-*/
-function extensiveDeepEqual(leftHandOperand, rightHandOperand, options) {
-  options = options || {};
-  options.memoize = options.memoize === false ? false : options.memoize || new MemoizeMap();
-  var comparator = options && options.comparator;
-
-  // Check if a memoized result exists.
-  var memoizeResultLeft = memoizeCompare(leftHandOperand, rightHandOperand, options.memoize);
-  if (memoizeResultLeft !== null) {
-    return memoizeResultLeft;
-  }
-  var memoizeResultRight = memoizeCompare(rightHandOperand, leftHandOperand, options.memoize);
-  if (memoizeResultRight !== null) {
-    return memoizeResultRight;
-  }
-
-  // If a comparator is present, use it.
-  if (comparator) {
-    var comparatorResult = comparator(leftHandOperand, rightHandOperand);
-    // Comparators may return null, in which case we want to go back to default behavior.
-    if (comparatorResult === false || comparatorResult === true) {
-      memoizeSet(leftHandOperand, rightHandOperand, options.memoize, comparatorResult);
-      return comparatorResult;
-    }
-    // To allow comparators to override *any* behavior, we ran them first. Since it didn't decide
-    // what to do, we need to make sure to return the basic tests first before we move on.
-    var simpleResult = simpleEqual(leftHandOperand, rightHandOperand);
-    if (simpleResult !== null) {
-      // Don't memoize this, it takes longer to set/retrieve than to just compare.
-      return simpleResult;
-    }
-  }
-
-  var leftHandType = type(leftHandOperand);
-  if (leftHandType !== type(rightHandOperand)) {
-    memoizeSet(leftHandOperand, rightHandOperand, options.memoize, false);
-    return false;
-  }
-
-  // Temporarily set the operands in the memoize object to prevent blowing the stack
-  memoizeSet(leftHandOperand, rightHandOperand, options.memoize, true);
-
-  var result = extensiveDeepEqualByType(leftHandOperand, rightHandOperand, leftHandType, options);
-  memoizeSet(leftHandOperand, rightHandOperand, options.memoize, result);
-  return result;
-}
-
-function extensiveDeepEqualByType(leftHandOperand, rightHandOperand, leftHandType, options) {
-  switch (leftHandType) {
-    case 'String':
-    case 'Number':
-    case 'Boolean':
-    case 'Date':
-      // If these types are their instance types (e.g. `new Number`) then re-deepEqual against their values
-      return deepEqual(leftHandOperand.valueOf(), rightHandOperand.valueOf());
-    case 'Promise':
-    case 'Symbol':
-    case 'function':
-    case 'WeakMap':
-    case 'WeakSet':
-    case 'Error':
-      return leftHandOperand === rightHandOperand;
-    case 'Arguments':
-    case 'Int8Array':
-    case 'Uint8Array':
-    case 'Uint8ClampedArray':
-    case 'Int16Array':
-    case 'Uint16Array':
-    case 'Int32Array':
-    case 'Uint32Array':
-    case 'Float32Array':
-    case 'Float64Array':
-    case 'Array':
-      return iterableEqual(leftHandOperand, rightHandOperand, options);
-    case 'RegExp':
-      return regexpEqual(leftHandOperand, rightHandOperand);
-    case 'Generator':
-      return generatorEqual(leftHandOperand, rightHandOperand, options);
-    case 'DataView':
-      return iterableEqual(new Uint8Array(leftHandOperand.buffer), new Uint8Array(rightHandOperand.buffer), options);
-    case 'ArrayBuffer':
-      return iterableEqual(new Uint8Array(leftHandOperand), new Uint8Array(rightHandOperand), options);
-    case 'Set':
-      return entriesEqual(leftHandOperand, rightHandOperand, options);
-    case 'Map':
-      return entriesEqual(leftHandOperand, rightHandOperand, options);
-    default:
-      return objectEqual(leftHandOperand, rightHandOperand, options);
-  }
-}
-
-/*!
- * Compare two Regular Expressions for equality.
- *
- * @param {RegExp} leftHandOperand
- * @param {RegExp} rightHandOperand
- * @return {Boolean} result
- */
-
-function regexpEqual(leftHandOperand, rightHandOperand) {
-  return leftHandOperand.toString() === rightHandOperand.toString();
-}
-
-/*!
- * Compare two Sets/Maps for equality. Faster than other equality functions.
- *
- * @param {Set} leftHandOperand
- * @param {Set} rightHandOperand
- * @param {Object} [options] (Optional)
- * @return {Boolean} result
- */
-
-function entriesEqual(leftHandOperand, rightHandOperand, options) {
-  // IE11 doesn't support Set#entries or Set#@@iterator, so we need manually populate using Set#forEach
-  if (leftHandOperand.size !== rightHandOperand.size) {
-    return false;
-  }
-  if (leftHandOperand.size === 0) {
-    return true;
-  }
-  var leftHandItems = [];
-  var rightHandItems = [];
-  leftHandOperand.forEach(function gatherEntries(key, value) {
-    leftHandItems.push([ key, value ]);
-  });
-  rightHandOperand.forEach(function gatherEntries(key, value) {
-    rightHandItems.push([ key, value ]);
-  });
-  return iterableEqual(leftHandItems.sort(), rightHandItems.sort(), options);
-}
-
-/*!
- * Simple equality for flat iterable objects such as Arrays, TypedArrays or Node.js buffers.
- *
- * @param {Iterable} leftHandOperand
- * @param {Iterable} rightHandOperand
- * @param {Object} [options] (Optional)
- * @return {Boolean} result
- */
-
-function iterableEqual(leftHandOperand, rightHandOperand, options) {
-  var length = leftHandOperand.length;
-  if (length !== rightHandOperand.length) {
-    return false;
-  }
-  if (length === 0) {
-    return true;
-  }
-  var index = -1;
-  while (++index < length) {
-    if (deepEqual(leftHandOperand[index], rightHandOperand[index], options) === false) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/*!
- * Simple equality for generator objects such as those returned by generator functions.
- *
- * @param {Iterable} leftHandOperand
- * @param {Iterable} rightHandOperand
- * @param {Object} [options] (Optional)
- * @return {Boolean} result
- */
-
-function generatorEqual(leftHandOperand, rightHandOperand, options) {
-  return iterableEqual(getGeneratorEntries(leftHandOperand), getGeneratorEntries(rightHandOperand), options);
-}
-
-/*!
- * Determine if the given object has an @@iterator function.
- *
- * @param {Object} target
- * @return {Boolean} `true` if the object has an @@iterator function.
- */
-function hasIteratorFunction(target) {
-  return typeof Symbol !== 'undefined' &&
-    typeof target === 'object' &&
-    typeof Symbol.iterator !== 'undefined' &&
-    typeof target[Symbol.iterator] === 'function';
-}
-
-/*!
- * Gets all iterator entries from the given Object. If the Object has no @@iterator function, returns an empty array.
- * This will consume the iterator - which could have side effects depending on the @@iterator implementation.
- *
- * @param {Object} target
- * @returns {Array} an array of entries from the @@iterator function
- */
-function getIteratorEntries(target) {
-  if (hasIteratorFunction(target)) {
-    try {
-      return getGeneratorEntries(target[Symbol.iterator]());
-    } catch (iteratorError) {
-      return [];
-    }
-  }
-  return [];
-}
-
-/*!
- * Gets all entries from a Generator. This will consume the generator - which could have side effects.
- *
- * @param {Generator} target
- * @returns {Array} an array of entries from the Generator.
- */
-function getGeneratorEntries(generator) {
-  var generatorResult = generator.next();
-  var accumulator = [ generatorResult.value ];
-  while (generatorResult.done === false) {
-    generatorResult = generator.next();
-    accumulator.push(generatorResult.value);
-  }
-  return accumulator;
-}
-
-/*!
- * Gets all own and inherited enumerable keys from a target.
- *
- * @param {Object} target
- * @returns {Array} an array of own and inherited enumerable keys from the target.
- */
-function getEnumerableKeys(target) {
-  var keys = [];
-  for (var key in target) {
-    keys.push(key);
-  }
-  return keys;
-}
-
-/*!
- * Determines if two objects have matching values, given a set of keys. Defers to deepEqual for the equality check of
- * each key. If any value of the given key is not equal, the function will return false (early).
- *
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @param {Array} keys An array of keys to compare the values of leftHandOperand and rightHandOperand against
- * @param {Object} [options] (Optional)
- * @return {Boolean} result
- */
-function keysEqual(leftHandOperand, rightHandOperand, keys, options) {
-  var length = keys.length;
-  if (length === 0) {
-    return true;
-  }
-  for (var i = 0; i < length; i += 1) {
-    if (deepEqual(leftHandOperand[keys[i]], rightHandOperand[keys[i]], options) === false) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/*!
- * Recursively check the equality of two Objects. Once basic sameness has been established it will defer to `deepEqual`
- * for each enumerable key in the object.
- *
- * @param {Mixed} leftHandOperand
- * @param {Mixed} rightHandOperand
- * @param {Object} [options] (Optional)
- * @return {Boolean} result
- */
-
-function objectEqual(leftHandOperand, rightHandOperand, options) {
-  var leftHandKeys = getEnumerableKeys(leftHandOperand);
-  var rightHandKeys = getEnumerableKeys(rightHandOperand);
-  if (leftHandKeys.length && leftHandKeys.length === rightHandKeys.length) {
-    leftHandKeys.sort();
-    rightHandKeys.sort();
-    if (iterableEqual(leftHandKeys, rightHandKeys) === false) {
-      return false;
-    }
-    return keysEqual(leftHandOperand, rightHandOperand, leftHandKeys, options);
-  }
-
-  var leftHandEntries = getIteratorEntries(leftHandOperand);
-  var rightHandEntries = getIteratorEntries(rightHandOperand);
-  if (leftHandEntries.length && leftHandEntries.length === rightHandEntries.length) {
-    leftHandEntries.sort();
-    rightHandEntries.sort();
-    return iterableEqual(leftHandEntries, rightHandEntries, options);
-  }
-
-  if (leftHandKeys.length === 0 &&
-      leftHandEntries.length === 0 &&
-      rightHandKeys.length === 0 &&
-      rightHandEntries.length === 0) {
-    return true;
-  }
-
-  return false;
-}
-
-/*!
- * Returns true if the argument is a primitive.
- *
- * This intentionally returns true for all objects that can be compared by reference,
- * including functions and symbols.
- *
- * @param {Mixed} value
- * @return {Boolean} result
- */
-function isPrimitive(value) {
-  return value === null || typeof value !== 'object';
-}
-;
-return module.exports;
-},
-32: function (require, module, exports) {
-/*!
- * Chai - compareByInspect utility
- * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/*!
- * Module dependancies
- */
-
-var inspect = require(21);
-
-/**
- * ### .compareByInspect(mixed, mixed)
- *
- * To be used as a compareFunction with Array.prototype.sort. Compares elements
- * using inspect instead of default behavior of using toString so that Symbols
- * and objects with irregular/missing toString can still be sorted without a
- * TypeError.
- *
- * @param {Mixed} first element to compare
- * @param {Mixed} second element to compare
- * @returns {Number} -1 if 'a' should come before 'b'; otherwise 1 
- * @name compareByInspect
- * @namespace Utils
- * @api public
- */
-
-module.exports = function compareByInspect(a, b) {
-  return inspect(a) < inspect(b) ? -1 : 1;
-};
-;
-return module.exports;
-},
-4: function (require, module, exports) {
-/*!
- * chai
- * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var used = [];
-
-/*!
- * Chai version
- */
-
-exports.version = '4.1.0';
-
-/*!
- * Assertion Error
- */
-
-exports.AssertionError = require(7);
-
-/*!
- * Utils for plugins (not exported)
- */
-
-var util = require(8);
-
-/**
- * # .use(function)
- *
- * Provides a way to extend the internals of Chai.
- *
- * @param {Function}
- * @returns {this} for chaining
- * @api public
- */
-
-exports.use = function (fn) {
-  if (!~used.indexOf(fn)) {
-    fn(exports, util);
-    used.push(fn);
-  }
-
-  return exports;
-};
-
-/*!
- * Utility Functions
- */
-
-exports.util = util;
-
-/*!
- * Configuration
- */
-
-var config = require(9);
-exports.config = config;
-
-/*!
- * Primary `Assertion` prototype
- */
-
-var assertion = require(10);
-exports.use(assertion);
-
-/*!
- * Core Assertions
- */
-
-var core = require(11);
-exports.use(core);
-
-/*!
- * Expect interface
- */
-
-var expect = require(12);
-exports.use(expect);
-
-/*!
- * Should interface
- */
-
-var should = require(13);
-exports.use(should);
-
-/*!
- * Assert interface
- */
-
-var assert = require(14);
-exports.use(assert);
-;
-return module.exports;
-},
-12: function (require, module, exports) {
-/*!
- * chai
- * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-module.exports = function (chai, util) {
-  chai.expect = function (val, message) {
-    return new chai.Assertion(val, message);
-  };
-
-  /**
-   * ### .fail(actual, expected, [message], [operator])
-   *
-   * Throw a failure.
-   *
-   * @name fail
-   * @param {Mixed} actual
-   * @param {Mixed} expected
-   * @param {String} message
-   * @param {String} operator
-   * @namespace BDD
-   * @api public
-   */
-
-  chai.expect.fail = function (actual, expected, message, operator) {
-    message = message || 'expect.fail()';
-    throw new chai.AssertionError(message, {
-        actual: actual
-      , expected: expected
-      , operator: operator
-    }, chai.expect.fail);
-  };
-};
-;
-return module.exports;
-},
-10: function (require, module, exports) {
-/*!
- * chai
- * http://chaijs.com
- * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var config = require(9);
-
-module.exports = function (_chai, util) {
-  /*!
-   * Module dependencies.
-   */
-
-  var AssertionError = _chai.AssertionError
-    , flag = util.flag;
-
-  /*!
-   * Module export.
-   */
-
-  _chai.Assertion = Assertion;
-
-  /*!
-   * Assertion Constructor
-   *
-   * Creates object for chaining.
-   *
-   * `Assertion` objects contain metadata in the form of flags. Three flags can
-   * be assigned during instantiation by passing arguments to this constructor:
-   *
-   * - `object`: This flag contains the target of the assertion. For example, in
-   *   the assertion `expect(numKittens).to.equal(7);`, the `object` flag will
-   *   contain `numKittens` so that the `equal` assertion can reference it when
-   *   needed.
-   *
-   * - `message`: This flag contains an optional custom error message to be
-   *   prepended to the error message that's generated by the assertion when it
-   *   fails.
-   *
-   * - `ssfi`: This flag stands for "start stack function indicator". It
-   *   contains a function reference that serves as the starting point for
-   *   removing frames from the stack trace of the error that's created by the
-   *   assertion when it fails. The goal is to provide a cleaner stack trace to
-   *   end users by removing Chai's internal functions. Note that it only works
-   *   in environments that support `Error.captureStackTrace`, and only when
-   *   `Chai.config.includeStack` hasn't been set to `false`.
-   *
-   * - `lockSsfi`: This flag controls whether or not the given `ssfi` flag
-   *   should retain its current value, even as assertions are chained off of
-   *   this object. This is usually set to `true` when creating a new assertion
-   *   from within another assertion. It's also temporarily set to `true` before
-   *   an overwritten assertion gets called by the overwriting assertion.
-   *
-   * @param {Mixed} obj target of the assertion
-   * @param {String} msg (optional) custom error message
-   * @param {Function} ssfi (optional) starting point for removing stack frames
-   * @param {Boolean} lockSsfi (optional) whether or not the ssfi flag is locked
-   * @api private
-   */
-
-  function Assertion (obj, msg, ssfi, lockSsfi) {
-    flag(this, 'ssfi', ssfi || Assertion);
-    flag(this, 'lockSsfi', lockSsfi);
-    flag(this, 'object', obj);
-    flag(this, 'message', msg);
-
-    return util.proxify(this);
-  }
-
-  Object.defineProperty(Assertion, 'includeStack', {
-    get: function() {
-      console.warn('Assertion.includeStack is deprecated, use chai.config.includeStack instead.');
-      return config.includeStack;
-    },
-    set: function(value) {
-      console.warn('Assertion.includeStack is deprecated, use chai.config.includeStack instead.');
-      config.includeStack = value;
-    }
-  });
-
-  Object.defineProperty(Assertion, 'showDiff', {
-    get: function() {
-      console.warn('Assertion.showDiff is deprecated, use chai.config.showDiff instead.');
-      return config.showDiff;
-    },
-    set: function(value) {
-      console.warn('Assertion.showDiff is deprecated, use chai.config.showDiff instead.');
-      config.showDiff = value;
-    }
-  });
-
-  Assertion.addProperty = function (name, fn) {
-    util.addProperty(this.prototype, name, fn);
-  };
-
-  Assertion.addMethod = function (name, fn) {
-    util.addMethod(this.prototype, name, fn);
-  };
-
-  Assertion.addChainableMethod = function (name, fn, chainingBehavior) {
-    util.addChainableMethod(this.prototype, name, fn, chainingBehavior);
-  };
-
-  Assertion.overwriteProperty = function (name, fn) {
-    util.overwriteProperty(this.prototype, name, fn);
-  };
-
-  Assertion.overwriteMethod = function (name, fn) {
-    util.overwriteMethod(this.prototype, name, fn);
-  };
-
-  Assertion.overwriteChainableMethod = function (name, fn, chainingBehavior) {
-    util.overwriteChainableMethod(this.prototype, name, fn, chainingBehavior);
-  };
-
-  /**
-   * ### .assert(expression, message, negateMessage, expected, actual, showDiff)
-   *
-   * Executes an expression and check expectations. Throws AssertionError for reporting if test doesn't pass.
-   *
-   * @name assert
-   * @param {Philosophical} expression to be tested
-   * @param {String|Function} message or function that returns message to display if expression fails
-   * @param {String|Function} negatedMessage or function that returns negatedMessage to display if negated expression fails
-   * @param {Mixed} expected value (remember to check for negation)
-   * @param {Mixed} actual (optional) will default to `this.obj`
-   * @param {Boolean} showDiff (optional) when set to `true`, assert will display a diff in addition to the message if expression fails
-   * @api private
-   */
-
-  Assertion.prototype.assert = function (expr, msg, negateMsg, expected, _actual, showDiff) {
-    var ok = util.test(this, arguments);
-    if (false !== showDiff) showDiff = true;
-    if (undefined === expected && undefined === _actual) showDiff = false;
-    if (true !== config.showDiff) showDiff = false;
-
-    if (!ok) {
-      msg = util.getMessage(this, arguments);
-      var actual = util.getActual(this, arguments);
-      throw new AssertionError(msg, {
-          actual: actual
-        , expected: expected
-        , showDiff: showDiff
-      }, (config.includeStack) ? this.assert : flag(this, 'ssfi'));
-    }
-  };
-
-  /*!
-   * ### ._obj
-   *
-   * Quick reference to stored `actual` value for plugin developers.
-   *
-   * @api private
-   */
-
-  Object.defineProperty(Assertion.prototype, '_obj',
-    { get: function () {
-        return flag(this, 'object');
-      }
-    , set: function (val) {
-        flag(this, 'object', val);
-      }
-  });
-};
-;
-return module.exports;
-},
-21: function (require, module, exports) {
-// This is (almost) directly from Node.js utils
-// https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
-
-var getName = require(25);
-var getProperties = require(40);
-var getEnumerableProperties = require(41);
-var config = require(9);
-
-module.exports = inspect;
-
-/**
- * ### .inspect(obj, [showHidden], [depth], [colors])
- *
- * Echoes the value of a value. Tries to print the value out
- * in the best way possible given the different types.
- *
- * @param {Object} obj The object to print out.
- * @param {Boolean} showHidden Flag that shows hidden (not enumerable)
- *    properties of objects. Default is false.
- * @param {Number} depth Depth in which to descend in object. Default is 2.
- * @param {Boolean} colors Flag to turn on ANSI escape codes to color the
- *    output. Default is false (no coloring).
- * @namespace Utils
- * @name inspect
- */
-function inspect(obj, showHidden, depth, colors) {
-  var ctx = {
-    showHidden: showHidden,
-    seen: [],
-    stylize: function (str) { return str; }
-  };
-  return formatValue(ctx, obj, (typeof depth === 'undefined' ? 2 : depth));
-}
-
-// Returns true if object is a DOM element.
-var isDOMElement = function (object) {
-  if (typeof HTMLElement === 'object') {
-    return object instanceof HTMLElement;
-  } else {
-    return object &&
-      typeof object === 'object' &&
-      'nodeType' in object &&
-      object.nodeType === 1 &&
-      typeof object.nodeName === 'string';
-  }
-};
-
-function formatValue(ctx, value, recurseTimes) {
-  // Provide a hook for user-specified inspect functions.
-  // Check that value is an object with an inspect function on it
-  if (value && typeof value.inspect === 'function' &&
-      // Filter out the util module, it's inspect function is special
-      value.inspect !== exports.inspect &&
-      // Also filter out any prototype objects using the circular check.
-      !(value.constructor && value.constructor.prototype === value)) {
-    var ret = value.inspect(recurseTimes, ctx);
-    if (typeof ret !== 'string') {
-      ret = formatValue(ctx, ret, recurseTimes);
-    }
-    return ret;
-  }
-
-  // Primitive types cannot have properties
-  var primitive = formatPrimitive(ctx, value);
-  if (primitive) {
-    return primitive;
-  }
-
-  // If this is a DOM element, try to get the outer HTML.
-  if (isDOMElement(value)) {
-    if ('outerHTML' in value) {
-      return value.outerHTML;
-      // This value does not have an outerHTML attribute,
-      //   it could still be an XML element
-    } else {
-      // Attempt to serialize it
-      try {
-        if (document.xmlVersion) {
-          var xmlSerializer = new XMLSerializer();
-          return xmlSerializer.serializeToString(value);
-        } else {
-          // Firefox 11- do not support outerHTML
-          //   It does, however, support innerHTML
-          //   Use the following to render the element
-          var ns = "http://www.w3.org/1999/xhtml";
-          var container = document.createElementNS(ns, '_');
-
-          container.appendChild(value.cloneNode(false));
-          var html = container.innerHTML
-            .replace('><', '>' + value.innerHTML + '<');
-          container.innerHTML = '';
-          return html;
-        }
-      } catch (err) {
-        // This could be a non-native DOM implementation,
-        //   continue with the normal flow:
-        //   printing the element as if it is an object.
-      }
-    }
-  }
-
-  // Look up the keys of the object.
-  var visibleKeys = getEnumerableProperties(value);
-  var keys = ctx.showHidden ? getProperties(value) : visibleKeys;
-
-  var name, nameSuffix;
-
-  // Some type of object without properties can be shortcutted.
-  // In IE, errors have a single `stack` property, or if they are vanilla `Error`,
-  // a `stack` plus `description` property; ignore those for consistency.
-  if (keys.length === 0 || (isError(value) && (
-      (keys.length === 1 && keys[0] === 'stack') ||
-      (keys.length === 2 && keys[0] === 'description' && keys[1] === 'stack')
-     ))) {
-    if (typeof value === 'function') {
-      name = getName(value);
-      nameSuffix = name ? ': ' + name : '';
-      return ctx.stylize('[Function' + nameSuffix + ']', 'special');
-    }
-    if (isRegExp(value)) {
-      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
-    }
-    if (isDate(value)) {
-      return ctx.stylize(Date.prototype.toUTCString.call(value), 'date');
-    }
-    if (isError(value)) {
-      return formatError(value);
-    }
-  }
-
-  var base = ''
-    , array = false
-    , typedArray = false
-    , braces = ['{', '}'];
-
-  if (isTypedArray(value)) {
-    typedArray = true;
-    braces = ['[', ']'];
-  }
-
-  // Make Array say that they are Array
-  if (isArray(value)) {
-    array = true;
-    braces = ['[', ']'];
-  }
-
-  // Make functions say that they are functions
-  if (typeof value === 'function') {
-    name = getName(value);
-    nameSuffix = name ? ': ' + name : '';
-    base = ' [Function' + nameSuffix + ']';
-  }
-
-  // Make RegExps say that they are RegExps
-  if (isRegExp(value)) {
-    base = ' ' + RegExp.prototype.toString.call(value);
-  }
-
-  // Make dates with properties first say the date
-  if (isDate(value)) {
-    base = ' ' + Date.prototype.toUTCString.call(value);
-  }
-
-  // Make error with message first say the error
-  if (isError(value)) {
-    return formatError(value);
-  }
-
-  if (keys.length === 0 && (!array || value.length == 0)) {
-    return braces[0] + base + braces[1];
-  }
-
-  if (recurseTimes < 0) {
-    if (isRegExp(value)) {
-      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
-    } else {
-      return ctx.stylize('[Object]', 'special');
-    }
-  }
-
-  ctx.seen.push(value);
-
-  var output;
-  if (array) {
-    output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
-  } else if (typedArray) {
-    return formatTypedArray(value);
-  } else {
-    output = keys.map(function(key) {
-      return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
-    });
-  }
-
-  ctx.seen.pop();
-
-  return reduceToSingleString(output, base, braces);
-}
-
-
-function formatPrimitive(ctx, value) {
-  switch (typeof value) {
-    case 'undefined':
-      return ctx.stylize('undefined', 'undefined');
-
-    case 'string':
-      var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
-                                               .replace(/'/g, "\\'")
-                                               .replace(/\\"/g, '"') + '\'';
-      return ctx.stylize(simple, 'string');
-
-    case 'number':
-      if (value === 0 && (1/value) === -Infinity) {
-        return ctx.stylize('-0', 'number');
-      }
-      return ctx.stylize('' + value, 'number');
-
-    case 'boolean':
-      return ctx.stylize('' + value, 'boolean');
-
-    case 'symbol':
-      return ctx.stylize(value.toString(), 'symbol');
-  }
-  // For some reason typeof null is "object", so special case here.
-  if (value === null) {
-    return ctx.stylize('null', 'null');
-  }
-}
-
-
-function formatError(value) {
-  return '[' + Error.prototype.toString.call(value) + ']';
-}
-
-
-function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
-  var output = [];
-  for (var i = 0, l = value.length; i < l; ++i) {
-    if (Object.prototype.hasOwnProperty.call(value, String(i))) {
-      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
-          String(i), true));
-    } else {
-      output.push('');
-    }
-  }
-
-  keys.forEach(function(key) {
-    if (!key.match(/^\d+$/)) {
-      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
-          key, true));
-    }
-  });
-  return output;
-}
-
-function formatTypedArray(value) {
-  var str = '[ ';
-
-  for (var i = 0; i < value.length; ++i) {
-    if (str.length >= config.truncateThreshold - 7) {
-      str += '...';
-      break;
-    }
-    str += value[i] + ', ';
-  }
-  str += ' ]';
-
-  // Removing trailing `, ` if the array was not truncated
-  if (str.indexOf(',  ]') !== -1) {
-    str = str.replace(',  ]', ' ]');
-  }
-
-  return str;
-}
-
-function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
-  var name;
-  var propDescriptor = Object.getOwnPropertyDescriptor(value, key);
-  var str;
-
-  if (propDescriptor) {
-    if (propDescriptor.get) {
-      if (propDescriptor.set) {
-        str = ctx.stylize('[Getter/Setter]', 'special');
-      } else {
-        str = ctx.stylize('[Getter]', 'special');
-      }
-    } else {
-      if (propDescriptor.set) {
-        str = ctx.stylize('[Setter]', 'special');
-      }
-    }
-  }
-  if (visibleKeys.indexOf(key) < 0) {
-    name = '[' + key + ']';
-  }
-  if (!str) {
-    if (ctx.seen.indexOf(value[key]) < 0) {
-      if (recurseTimes === null) {
-        str = formatValue(ctx, value[key], null);
-      } else {
-        str = formatValue(ctx, value[key], recurseTimes - 1);
-      }
-      if (str.indexOf('\n') > -1) {
-        if (array) {
-          str = str.split('\n').map(function(line) {
-            return '  ' + line;
-          }).join('\n').substr(2);
-        } else {
-          str = '\n' + str.split('\n').map(function(line) {
-            return '   ' + line;
-          }).join('\n');
-        }
-      }
-    } else {
-      str = ctx.stylize('[Circular]', 'special');
-    }
-  }
-  if (typeof name === 'undefined') {
-    if (array && key.match(/^\d+$/)) {
-      return str;
-    }
-    name = JSON.stringify('' + key);
-    if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
-      name = name.substr(1, name.length - 2);
-      name = ctx.stylize(name, 'name');
-    } else {
-      name = name.replace(/'/g, "\\'")
-                 .replace(/\\"/g, '"')
-                 .replace(/(^"|"$)/g, "'");
-      name = ctx.stylize(name, 'string');
-    }
-  }
-
-  return name + ': ' + str;
-}
-
-
-function reduceToSingleString(output, base, braces) {
-  var numLinesEst = 0;
-  var length = output.reduce(function(prev, cur) {
-    numLinesEst++;
-    if (cur.indexOf('\n') >= 0) numLinesEst++;
-    return prev + cur.length + 1;
-  }, 0);
-
-  if (length > 60) {
-    return braces[0] +
-           (base === '' ? '' : base + '\n ') +
-           ' ' +
-           output.join(',\n  ') +
-           ' ' +
-           braces[1];
-  }
-
-  return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
-}
-
-function isTypedArray(ar) {
-  // Unfortunately there's no way to check if an object is a TypedArray
-  // We have to check if it's one of these types
-  return (typeof ar === 'object' && /\w+Array]$/.test(objectToString(ar)));
-}
-
-function isArray(ar) {
-  return Array.isArray(ar) ||
-         (typeof ar === 'object' && objectToString(ar) === '[object Array]');
-}
-
-function isRegExp(re) {
-  return typeof re === 'object' && objectToString(re) === '[object RegExp]';
-}
-
-function isDate(d) {
-  return typeof d === 'object' && objectToString(d) === '[object Date]';
-}
-
-function isError(e) {
-  return typeof e === 'object' && objectToString(e) === '[object Error]';
-}
-
-function objectToString(o) {
-  return Object.prototype.toString.call(o);
-}
-;
-return module.exports;
-},
-22: function (require, module, exports) {
-/*!
- * Chai - flag utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/*!
- * Module dependancies
- */
-
-var inspect = require(21);
-var config = require(9);
-
-/**
- * ### .objDisplay(object)
- *
- * Determines if an object or an array matches
- * criteria to be inspected in-line for error
- * messages or should be truncated.
- *
- * @param {Mixed} javascript object to inspect
- * @name objDisplay
- * @namespace Utils
- * @api public
- */
-
-module.exports = function objDisplay(obj) {
-  var str = inspect(obj)
-    , type = Object.prototype.toString.call(obj);
-
-  if (config.truncateThreshold && str.length >= config.truncateThreshold) {
-    if (type === '[object Function]') {
-      return !obj.name || obj.name === ''
-        ? '[Function]'
-        : '[Function: ' + obj.name + ']';
-    } else if (type === '[object Array]') {
-      return '[ Array(' + obj.length + ') ]';
-    } else if (type === '[object Object]') {
-      var keys = Object.keys(obj)
-        , kstr = keys.length > 2
-          ? keys.splice(0, 2).join(', ') + ', ...'
-          : keys.join(', ');
-      return '{ Object (' + kstr + ') }';
-    } else {
-      return str;
-    }
-  } else {
-    return str;
-  }
-};
-;
-return module.exports;
-},
-8: function (require, module, exports) {
-/*!
- * chai
- * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/*!
- * Dependencies that are used for multiple exports are required here only once
- */
-
-var pathval = require(16);
-
-/*!
- * test utility
- */
-
-exports.test = require(17);
-
-/*!
- * type utility
- */
-
-exports.type = require(6);
-
-/*!
- * expectTypes utility
- */
-exports.expectTypes = require(18);
-
-/*!
- * message utility
- */
-
-exports.getMessage = require(19);
-
-/*!
- * actual utility
- */
-
-exports.getActual = require(20);
-
-/*!
- * Inspect util
- */
-
-exports.inspect = require(21);
-
-/*!
- * Object Display util
- */
-
-exports.objDisplay = require(22);
-
-/*!
- * Flag utility
- */
-
-exports.flag = require(23);
-
-/*!
- * Flag transferring utility
- */
-
-exports.transferFlags = require(24);
-
-/*!
- * Deep equal utility
- */
-
-exports.eql = require(5);
-
-/*!
- * Deep path info
- */
-
-exports.getPathInfo = pathval.getPathInfo;
-
-/*!
- * Check if a property exists
- */
-
-exports.hasProperty = pathval.hasProperty;
-
-/*!
- * Function name
- */
-
-exports.getName = require(25);
-
-/*!
- * add Property
- */
-
-exports.addProperty = require(26);
-
-/*!
- * add Method
- */
-
-exports.addMethod = require(27);
-
-/*!
- * overwrite Property
- */
-
-exports.overwriteProperty = require(28);
-
-/*!
- * overwrite Method
- */
-
-exports.overwriteMethod = require(29);
-
-/*!
- * Add a chainable method
- */
-
-exports.addChainableMethod = require(30);
-
-/*!
- * Overwrite chainable method
- */
-
-exports.overwriteChainableMethod = require(31);
-
-/*!
- * Compare by inspect method
- */
-
-exports.compareByInspect = require(32);
-
-/*!
- * Get own enumerable property symbols method
- */
-
-exports.getOwnEnumerablePropertySymbols = require(33);
-
-/*!
- * Get own enumerable properties method
- */
-
-exports.getOwnEnumerableProperties = require(34);
-
-/*!
- * Checks error against a given set of criteria
- */
-
-exports.checkError = require(35);
-
-/*!
- * Proxify util
- */
-
-exports.proxify = require(36);
-
-/*!
- * addLengthGuard util
- */
-
-exports.addLengthGuard = require(37);
-
-/*!
- * isProxyEnabled helper
- */
-
-exports.isProxyEnabled = require(38);
-
-/*!
- * isNaN method
- */
-
-exports.isNaN = require(39);
-;
-return module.exports;
-},
-17: function (require, module, exports) {
-/*!
- * Chai - test utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/*!
- * Module dependancies
- */
-
-var flag = require(23);
-
-/**
- * ### .test(object, expression)
- *
- * Test and object for expression.
- *
- * @param {Object} object (constructed Assertion)
- * @param {Arguments} chai.Assertion.prototype.assert arguments
- * @namespace Utils
- * @name test
- */
-
-module.exports = function test(obj, args) {
-  var negate = flag(obj, 'negate')
-    , expr = args[0];
-  return negate ? !expr : expr;
-};
-;
-return module.exports;
-},
-7: function (require, module, exports) {
-/*!
- * assertion-error
- * Copyright(c) 2013 Jake Luer <jake@qualiancy.com>
- * MIT Licensed
- */
-
-/*!
- * Return a function that will copy properties from
- * one object to another excluding any originally
- * listed. Returned function will create a new `{}`.
- *
- * @param {String} excluded properties ...
- * @return {Function}
- */
-
-function exclude () {
-  var excludes = [].slice.call(arguments);
-
-  function excludeProps (res, obj) {
-    Object.keys(obj).forEach(function (key) {
-      if (!~excludes.indexOf(key)) res[key] = obj[key];
-    });
-  }
-
-  return function extendExclude () {
-    var args = [].slice.call(arguments)
-      , i = 0
-      , res = {};
-
-    for (; i < args.length; i++) {
-      excludeProps(res, args[i]);
-    }
-
-    return res;
-  };
-};
-
-/*!
- * Primary Exports
- */
-
-module.exports = AssertionError;
-
-/**
- * ### AssertionError
- *
- * An extension of the JavaScript `Error` constructor for
- * assertion and validation scenarios.
- *
- * @param {String} message
- * @param {Object} properties to include (optional)
- * @param {callee} start stack function (optional)
- */
-
-function AssertionError (message, _props, ssf) {
-  var extend = exclude('name', 'message', 'stack', 'constructor', 'toJSON')
-    , props = extend(_props || {});
-
-  // default values
-  this.message = message || 'Unspecified AssertionError';
-  this.showDiff = false;
-
-  // copy from properties
-  for (var key in props) {
-    this[key] = props[key];
-  }
-
-  // capture stack trace
-  ssf = ssf || arguments.callee;
-  if (ssf && Error.captureStackTrace) {
-    Error.captureStackTrace(this, ssf);
-  } else {
-    try {
-      throw new Error();
-    } catch(e) {
-      this.stack = e.stack;
-    }
-  }
-}
-
-/*!
- * Inherit from Error.prototype
- */
-
-AssertionError.prototype = Object.create(Error.prototype);
-
-/*!
- * Statically set name
- */
-
-AssertionError.prototype.name = 'AssertionError';
-
-/*!
- * Ensure correct constructor
- */
-
-AssertionError.prototype.constructor = AssertionError;
-
-/**
- * Allow errors to be converted to JSON for static transfer.
- *
- * @param {Boolean} include stack (default: `true`)
- * @return {Object} object that can be `JSON.stringify`
- */
-
-AssertionError.prototype.toJSON = function (stack) {
-  var extend = exclude('constructor', 'toJSON', 'stack')
-    , props = extend({ name: this.name }, this);
-
-  // include stack if exists and not turned off
-  if (false !== stack && this.stack) {
-    props.stack = this.stack;
-  }
-
-  return props;
-};
-;
-return module.exports;
-},
-33: function (require, module, exports) {
-/*!
- * Chai - getOwnEnumerablePropertySymbols utility
- * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/**
- * ### .getOwnEnumerablePropertySymbols(object)
- *
- * This allows the retrieval of directly-owned enumerable property symbols of an
- * object. This function is necessary because Object.getOwnPropertySymbols
- * returns both enumerable and non-enumerable property symbols.
- *
- * @param {Object} object
- * @returns {Array}
- * @namespace Utils
- * @name getOwnEnumerablePropertySymbols
- * @api public
- */
-
-module.exports = function getOwnEnumerablePropertySymbols(obj) {
-  if (typeof Object.getOwnPropertySymbols !== 'function') return [];
-
-  return Object.getOwnPropertySymbols(obj).filter(function (sym) {
-    return Object.getOwnPropertyDescriptor(obj, sym).enumerable;
-  });
-};
-;
-return module.exports;
-},
 14: function (require, module, exports) {
 /*!
  * chai
@@ -5312,10 +2060,10 @@ module.exports = function (chai, util) {
    * You can also provide a single object instead of a `keys` array and its keys
    * will be used as the expected set of keys.
    *
-   *     assert.hasAnyKey({foo: 1, bar: 2, baz: 3}, ['foo', 'iDontExist', 'baz']);
-   *     assert.hasAnyKey({foo: 1, bar: 2, baz: 3}, {foo: 30, iDontExist: 99, baz: 1337]);
-   *     assert.hasAnyKey(new Map([[{foo: 1}, 'bar'], ['key', 'value']]), [{foo: 1}, 'thisKeyDoesNotExist']);
-   *     assert.hasAnyKey(new Set([{foo: 'bar'}, 'anotherKey'], [{foo: 'bar'}, 'thisKeyDoesNotExist']);
+   *     assert.hasAnyKeys({foo: 1, bar: 2, baz: 3}, ['foo', 'iDontExist', 'baz']);
+   *     assert.hasAnyKeys({foo: 1, bar: 2, baz: 3}, {foo: 30, iDontExist: 99, baz: 1337});
+   *     assert.hasAnyKeys(new Map([[{foo: 1}, 'bar'], ['key', 'value']]), [{foo: 1}, 'key']);
+   *     assert.hasAnyKeys(new Set([{foo: 'bar'}, 'anotherKey']), [{foo: 'bar'}, 'anotherKey']);
    *
    * @name hasAnyKeys
    * @param {Mixed} object
@@ -6736,120 +3484,47 @@ module.exports = function (chai, util) {
 ;
 return module.exports;
 },
-38: function (require, module, exports) {
-var config = require(9);
-
-/*!
- * Chai - isProxyEnabled helper
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/**
- * ### .isProxyEnabled()
- *
- * Helper function to check if Chai's proxy protection feature is enabled. If
- * proxies are unsupported or disabled via the user's Chai config, then return
- * false. Otherwise, return true.
- *
- * @namespace Utils
- * @name isProxyEnabled
- */
-
-module.exports = function isProxyEnabled() {
-  return config.useProxy && 
-    typeof Proxy !== 'undefined' &&
-    typeof Reflect !== 'undefined';
-};
+1: function (require, module, exports) {
+module.exports = require(4);
 ;
 return module.exports;
 },
-20: function (require, module, exports) {
+40: function (require, module, exports) {
 /*!
- * Chai - getActual utility
+ * Chai - getProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
  * MIT Licensed
  */
 
 /**
- * ### .getActual(object, [actual])
+ * ### .getProperties(object)
  *
- * Returns the `actual` value for an Assertion.
+ * This allows the retrieval of property names of an object, enumerable or not,
+ * inherited or not.
  *
- * @param {Object} object (constructed Assertion)
- * @param {Arguments} chai.Assertion.prototype.assert arguments
+ * @param {Object} object
+ * @returns {Array}
  * @namespace Utils
- * @name getActual
+ * @name getProperties
+ * @api public
  */
 
-module.exports = function getActual(obj, args) {
-  return args.length > 4 ? args[4] : obj._obj;
-};
-;
-return module.exports;
-},
-37: function (require, module, exports) {
-var config = require(9);
+module.exports = function getProperties(object) {
+  var result = Object.getOwnPropertyNames(object);
 
-var fnLengthDesc = Object.getOwnPropertyDescriptor(function () {}, 'length');
-
-/*!
- * Chai - addLengthGuard utility
- * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/**
- * ### .addLengthGuard(fn, assertionName, isChainable)
- *
- * Define `length` as a getter on the given uninvoked method assertion. The
- * getter acts as a guard against chaining `length` directly off of an uninvoked
- * method assertion, which is a problem because it references `function`'s
- * built-in `length` property instead of Chai's `length` assertion. When the
- * getter catches the user making this mistake, it throws an error with a
- * helpful message.
- *
- * There are two ways in which this mistake can be made. The first way is by
- * chaining the `length` assertion directly off of an uninvoked chainable
- * method. In this case, Chai suggests that the user use `lengthOf` instead. The
- * second way is by chaining the `length` assertion directly off of an uninvoked
- * non-chainable method. Non-chainable methods must be invoked prior to
- * chaining. In this case, Chai suggests that the user consult the docs for the
- * given assertion.
- *
- * If the `length` property of functions is unconfigurable, then return `fn`
- * without modification.
- *
- * Note that in ES6, the function's `length` property is configurable, so once
- * support for legacy environments is dropped, Chai's `length` property can
- * replace the built-in function's `length` property, and this length guard will
- * no longer be necessary. In the mean time, maintaining consistency across all
- * environments is the priority.
- *
- * @param {Function} fn
- * @param {String} assertionName
- * @param {Boolean} isChainable
- * @namespace Utils
- * @name addLengthGuard
- */
-
-module.exports = function addLengthGuard (fn, assertionName, isChainable) {
-  if (!fnLengthDesc.configurable) return fn;
-
-  Object.defineProperty(fn, 'length', {
-    get: function () {
-      if (isChainable) {
-        throw Error('Invalid Chai property: ' + assertionName + '.length. Due' +
-          ' to a compatibility issue, "length" cannot directly follow "' +
-          assertionName + '". Use "' + assertionName + '.lengthOf" instead.');
-      }
-
-      throw Error('Invalid Chai property: ' + assertionName + '.length. See' +
-        ' docs for proper usage of "' + assertionName + '".');
+  function addProperty(property) {
+    if (result.indexOf(property) === -1) {
+      result.push(property);
     }
-  });
+  }
 
-  return fn;
+  var proto = Object.getPrototypeOf(object);
+  while (proto !== null) {
+    Object.getOwnPropertyNames(proto).forEach(addProperty);
+    proto = Object.getPrototypeOf(proto);
+  }
+
+  return result;
 };
 ;
 return module.exports;
@@ -7326,53 +4001,18 @@ module.exports = function (chai, _) {
 
   function include (val, msg) {
     if (msg) flag(this, 'message', msg);
-
-    _.expectTypes(this, [
-      'array', 'object', 'string',
-      'map', 'set', 'weakset',
-    ]);
-
+    
     var obj = flag(this, 'object')
-      , objType = _.type(obj).toLowerCase();
+      , objType = _.type(obj).toLowerCase()
+      , flagMsg = flag(this, 'message')
+      , negate = flag(this, 'negate')
+      , ssfi = flag(this, 'ssfi')
+      , isDeep = flag(this, 'deep')
+      , descriptor = isDeep ? 'deep ' : '';
 
-    // This block is for asserting a subset of properties in an object.
-    if (objType === 'object') {
-      var props = Object.keys(val)
-        , negate = flag(this, 'negate')
-        , firstErr = null
-        , numErrs = 0;
+    flagMsg = flagMsg ? flagMsg + ': ' : '';
 
-      props.forEach(function (prop) {
-        var propAssertion = new Assertion(obj);
-        _.transferFlags(this, propAssertion, true);
-        flag(propAssertion, 'lockSsfi', true);
-
-        if (!negate || props.length === 1) {
-          propAssertion.property(prop, val[prop]);
-          return;
-        }
-
-        try {
-          propAssertion.property(prop, val[prop]);
-        } catch (err) {
-          if (!_.checkError.compatibleConstructor(err, AssertionError)) throw err;
-          if (firstErr === null) firstErr = err;
-          numErrs++;
-        }
-      }, this);
-
-      // When validating .not.include with multiple properties, we only want
-      // to throw an assertion error if all of the properties are included,
-      // in which case we throw the first property assertion error that we
-      // encountered.
-      if (negate && props.length > 1 && numErrs === props.length) throw firstErr;
-
-      return;
-    }
-
-    var isDeep = flag(this, 'deep')
-      , descriptor = isDeep ? 'deep ' : ''
-      , included = false;
+    var included = false;
 
     switch (objType) {
       case 'string':
@@ -7381,10 +4021,6 @@ module.exports = function (chai, _) {
 
       case 'weakset':
         if (isDeep) {
-          var flagMsg = flag(this, 'message')
-            , ssfi = flag(this, 'ssfi');
-          flagMsg = flagMsg ? flagMsg + ': ' : '';
-
           throw new AssertionError(
             flagMsg + 'unable to use .deep.include with WeakSet',
             undefined,
@@ -7421,6 +4057,53 @@ module.exports = function (chai, _) {
           included = obj.indexOf(val) !== -1;
         }
         break;
+
+      default:
+        // This block is for asserting a subset of properties in an object.
+        // `_.expectTypes` isn't used here because `.include` should work with
+        // objects with a custom `@@toStringTag`.
+        if (val !== Object(val)) {
+          throw new AssertionError(
+            flagMsg + 'object tested must be an array, a map, an object,'
+              + ' a set, a string, or a weakset, but ' + objType + ' given',
+            undefined,
+            ssfi
+          );
+        }
+
+        var props = Object.keys(val)
+          , firstErr = null
+          , numErrs = 0;
+  
+        props.forEach(function (prop) {
+          var propAssertion = new Assertion(obj);
+          _.transferFlags(this, propAssertion, true);
+          flag(propAssertion, 'lockSsfi', true);
+  
+          if (!negate || props.length === 1) {
+            propAssertion.property(prop, val[prop]);
+            return;
+          }
+  
+          try {
+            propAssertion.property(prop, val[prop]);
+          } catch (err) {
+            if (!_.checkError.compatibleConstructor(err, AssertionError)) {
+              throw err;
+            }
+            if (firstErr === null) firstErr = err;
+            numErrs++;
+          }
+        }, this);
+  
+        // When validating .not.include with multiple properties, we only want
+        // to throw an assertion error if all of the properties are included,
+        // in which case we throw the first property assertion error that we
+        // encountered.
+        if (negate && props.length > 1 && numErrs === props.length) {
+          throw firstErr;
+        }
+        return;
     }
 
     // Assert inclusion in collection or substring in a string.
@@ -8458,28 +5141,25 @@ module.exports = function (chai, _) {
     var target = flag(this, 'object')
     var ssfi = flag(this, 'ssfi');
     var flagMsg = flag(this, 'message');
-    var validInstanceOfTarget = constructor === Object(constructor) && (
-        typeof constructor === 'function' ||
-        (typeof Symbol !== 'undefined' &&
-         typeof Symbol.hasInstance !== 'undefined' &&
-         Symbol.hasInstance in constructor)
-    );
 
-    if (!validInstanceOfTarget) {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      var constructorType = constructor === null ? 'null' : typeof constructor;
-      throw new AssertionError(
-        flagMsg + 'The instanceof assertion needs a constructor but ' + constructorType + ' was given.',
-        undefined,
-        ssfi
-      );
+    try {
+      var isInstanceOf = target instanceof constructor;
+    } catch (err) {
+      if (err instanceof TypeError) {
+        flagMsg = flagMsg ? flagMsg + ': ' : '';
+        throw new AssertionError(
+          flagMsg + 'The instanceof assertion needs a constructor but '
+            + _.type(constructor) + ' was given.',
+          undefined,
+          ssfi
+        );
+      }
+      throw err;
     }
-
-    var isInstanceOf = target instanceof constructor
 
     var name = _.getName(constructor);
     if (name === null) {
-        name = 'an unnamed constructor';
+      name = 'an unnamed constructor';
     }
 
     this.assert(
@@ -10582,6 +7262,3216 @@ module.exports = function (chai, _) {
 ;
 return module.exports;
 },
+9: function (require, module, exports) {
+module.exports = {
+
+  /**
+   * ### config.includeStack
+   *
+   * User configurable property, influences whether stack trace
+   * is included in Assertion error message. Default of false
+   * suppresses stack trace in the error message.
+   *
+   *     chai.config.includeStack = true;  // enable stack on error
+   *
+   * @param {Boolean}
+   * @api public
+   */
+
+  includeStack: false,
+
+  /**
+   * ### config.showDiff
+   *
+   * User configurable property, influences whether or not
+   * the `showDiff` flag should be included in the thrown
+   * AssertionErrors. `false` will always be `false`; `true`
+   * will be true when the assertion has requested a diff
+   * be shown.
+   *
+   * @param {Boolean}
+   * @api public
+   */
+
+  showDiff: true,
+
+  /**
+   * ### config.truncateThreshold
+   *
+   * User configurable property, sets length threshold for actual and
+   * expected values in assertion errors. If this threshold is exceeded, for
+   * example for large data structures, the value is replaced with something
+   * like `[ Array(3) ]` or `{ Object (prop1, prop2) }`.
+   *
+   * Set it to zero if you want to disable truncating altogether.
+   *
+   * This is especially userful when doing assertions on arrays: having this
+   * set to a reasonable large value makes the failure messages readily
+   * inspectable.
+   *
+   *     chai.config.truncateThreshold = 0;  // disable truncating
+   *
+   * @param {Number}
+   * @api public
+   */
+
+  truncateThreshold: 40,
+
+  /**
+   * ### config.useProxy
+   *
+   * User configurable property, defines if chai will use a Proxy to throw
+   * an error when a non-existent property is read, which protects users
+   * from typos when using property-based assertions.
+   *
+   * Set it to false if you want to disable this feature.
+   *
+   *     chai.config.useProxy = false;  // disable use of Proxy
+   *
+   * This feature is automatically disabled regardless of this config value
+   * in environments that don't support proxies.
+   *
+   * @param {Boolean}
+   * @api public
+   */
+
+  useProxy: true,
+
+  /**
+   * ### config.proxyExcludedKeys
+   *
+   * User configurable property, defines which properties should be ignored
+   * instead of throwing an error if they do not exist on the assertion.
+   * This is only applied if the environment Chai is running in supports proxies and
+   * if the `useProxy` configuration setting is enabled.
+   * By default, `then` and `inspect` will not throw an error if they do not exist on the
+   * assertion object because the `.inspect` property is read by `util.inspect` (for example, when
+   * using `console.log` on the assertion object) and `.then` is necessary for promise type-checking.
+   *
+   *     // By default these keys will not throw an error if they do not exist on the assertion object
+   *     chai.config.proxyExcludedKeys = ['then', 'inspect'];
+   *
+   * @param {Array}
+   * @api public
+   */
+
+  proxyExcludedKeys: ['then', 'inspect', 'toJSON']
+};
+;
+return module.exports;
+},
+28: function (require, module, exports) {
+/*!
+ * Chai - overwriteProperty utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+var chai = require(4);
+var flag = require(23);
+var isProxyEnabled = require(38);
+var transferFlags = require(24);
+
+/**
+ * ### .overwriteProperty(ctx, name, fn)
+ *
+ * Overwites an already existing property getter and provides
+ * access to previous value. Must return function to use as getter.
+ *
+ *     utils.overwriteProperty(chai.Assertion.prototype, 'ok', function (_super) {
+ *       return function () {
+ *         var obj = utils.flag(this, 'object');
+ *         if (obj instanceof Foo) {
+ *           new chai.Assertion(obj.name).to.equal('bar');
+ *         } else {
+ *           _super.call(this);
+ *         }
+ *       }
+ *     });
+ *
+ *
+ * Can also be accessed directly from `chai.Assertion`.
+ *
+ *     chai.Assertion.overwriteProperty('foo', fn);
+ *
+ * Then can be used as any other assertion.
+ *
+ *     expect(myFoo).to.be.ok;
+ *
+ * @param {Object} ctx object whose property is to be overwritten
+ * @param {String} name of property to overwrite
+ * @param {Function} getter function that returns a getter function to be used for name
+ * @namespace Utils
+ * @name overwriteProperty
+ * @api public
+ */
+
+module.exports = function overwriteProperty(ctx, name, getter) {
+  var _get = Object.getOwnPropertyDescriptor(ctx, name)
+    , _super = function () {};
+
+  if (_get && 'function' === typeof _get.get)
+    _super = _get.get
+
+  Object.defineProperty(ctx, name,
+    { get: function overwritingPropertyGetter() {
+        // Setting the `ssfi` flag to `overwritingPropertyGetter` causes this
+        // function to be the starting point for removing implementation frames
+        // from the stack trace of a failed assertion.
+        //
+        // However, we only want to use this function as the starting point if
+        // the `lockSsfi` flag isn't set and proxy protection is disabled.
+        //
+        // If the `lockSsfi` flag is set, then either this assertion has been
+        // overwritten by another assertion, or this assertion is being invoked
+        // from inside of another assertion. In the first case, the `ssfi` flag
+        // has already been set by the overwriting assertion. In the second
+        // case, the `ssfi` flag has already been set by the outer assertion.
+        //
+        // If proxy protection is enabled, then the `ssfi` flag has already been
+        // set by the proxy getter.
+        if (!isProxyEnabled() && !flag(this, 'lockSsfi')) {
+          flag(this, 'ssfi', overwritingPropertyGetter);
+        }
+
+        // Setting the `lockSsfi` flag to `true` prevents the overwritten
+        // assertion from changing the `ssfi` flag. By this point, the `ssfi`
+        // flag is already set to the correct starting point for this assertion.
+        var origLockSsfi = flag(this, 'lockSsfi');
+        flag(this, 'lockSsfi', true);
+        var result = getter(_super).call(this);
+        flag(this, 'lockSsfi', origLockSsfi);
+
+        if (result !== undefined) {
+          return result;
+        }
+
+        var newAssertion = new chai.Assertion();
+        transferFlags(this, newAssertion);
+        return newAssertion;
+      }
+    , configurable: true
+  });
+};
+;
+return module.exports;
+},
+29: function (require, module, exports) {
+/*!
+ * Chai - overwriteMethod utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+var addLengthGuard = require(37);
+var chai = require(4);
+var flag = require(23);
+var proxify = require(36);
+var transferFlags = require(24);
+
+/**
+ * ### .overwriteMethod(ctx, name, fn)
+ *
+ * Overwites an already existing method and provides
+ * access to previous function. Must return function
+ * to be used for name.
+ *
+ *     utils.overwriteMethod(chai.Assertion.prototype, 'equal', function (_super) {
+ *       return function (str) {
+ *         var obj = utils.flag(this, 'object');
+ *         if (obj instanceof Foo) {
+ *           new chai.Assertion(obj.value).to.equal(str);
+ *         } else {
+ *           _super.apply(this, arguments);
+ *         }
+ *       }
+ *     });
+ *
+ * Can also be accessed directly from `chai.Assertion`.
+ *
+ *     chai.Assertion.overwriteMethod('foo', fn);
+ *
+ * Then can be used as any other assertion.
+ *
+ *     expect(myFoo).to.equal('bar');
+ *
+ * @param {Object} ctx object whose method is to be overwritten
+ * @param {String} name of method to overwrite
+ * @param {Function} method function that returns a function to be used for name
+ * @namespace Utils
+ * @name overwriteMethod
+ * @api public
+ */
+
+module.exports = function overwriteMethod(ctx, name, method) {
+  var _method = ctx[name]
+    , _super = function () {
+      throw new Error(name + ' is not a function');
+    };
+
+  if (_method && 'function' === typeof _method)
+    _super = _method;
+
+  var overwritingMethodWrapper = function () {
+    // Setting the `ssfi` flag to `overwritingMethodWrapper` causes this
+    // function to be the starting point for removing implementation frames from
+    // the stack trace of a failed assertion.
+    //
+    // However, we only want to use this function as the starting point if the
+    // `lockSsfi` flag isn't set.
+    //
+    // If the `lockSsfi` flag is set, then either this assertion has been
+    // overwritten by another assertion, or this assertion is being invoked from
+    // inside of another assertion. In the first case, the `ssfi` flag has
+    // already been set by the overwriting assertion. In the second case, the
+    // `ssfi` flag has already been set by the outer assertion.
+    if (!flag(this, 'lockSsfi')) {
+      flag(this, 'ssfi', overwritingMethodWrapper);
+    }
+
+    // Setting the `lockSsfi` flag to `true` prevents the overwritten assertion
+    // from changing the `ssfi` flag. By this point, the `ssfi` flag is already
+    // set to the correct starting point for this assertion.
+    var origLockSsfi = flag(this, 'lockSsfi');
+    flag(this, 'lockSsfi', true);
+    var result = method(_super).apply(this, arguments);
+    flag(this, 'lockSsfi', origLockSsfi);
+
+    if (result !== undefined) {
+      return result;
+    }
+
+    var newAssertion = new chai.Assertion();
+    transferFlags(this, newAssertion);
+    return newAssertion;
+  }
+
+  addLengthGuard(overwritingMethodWrapper, name, false);
+  ctx[name] = proxify(overwritingMethodWrapper, name);
+};
+;
+return module.exports;
+},
+2: function (require, module, exports) {
+'use strict'
+
+var deepEqual = require(5)
+var type = require(6)
+
+var DEFAULT_TOLERANCE = 1e-6
+
+/**
+ * small utility functions
+ */
+function isNumber (val) {
+  return type(val) === 'number'
+}
+
+function bothNumbers (left, right) {
+  return isNumber(right) && isNumber(left)
+}
+
+function almostEqual (left, right, tol) {
+  return Math.abs(left - right) <= tol
+}
+
+/**
+ * Makes a comparator function to be passed to deepEqual.
+ * The returned function will return null if both arguments are not numbers,
+ * indicating that deepEqual should proceed with other equality checks
+ */
+function comparator (tolerance) {
+  return function (left, right) {
+    if (bothNumbers(left, right)) {
+      return almostEqual(left, right, tolerance)
+    }
+    return null
+  }
+}
+
+/**
+ * Sets global tolerance and returns a function to be passed to chai.use
+ * @see http://chaijs.com/guide/plugins/
+ */
+function chaiAlmost (customTolerance) {
+  var standardTolerance = customTolerance || DEFAULT_TOLERANCE
+
+  return function (chai, utils) {
+    var Assertion = chai.Assertion
+    var flag = utils.flag
+
+    /**
+     * Returns a new shallow equality function to override
+     * .equal, .equals, .eq that tests 'almost' equality
+     * if both values are numbers and a 'tolerance' flag is set.
+     * Sends to deep equality check if deep flag is set
+     */
+    function overrideAssertEqual (_super) {
+      return function assertEqual (val, msg) {
+        if (msg) flag(this, 'message', msg)
+
+        var deep = flag(this, 'deep')
+        var tolerance = flag(this, 'tolerance')
+
+        if (deep) {
+          return this.eql(val)
+        } else if (tolerance && bothNumbers(val, this._obj)) {
+          this.assert(almostEqual(val, this._obj, tolerance),
+            'expected #{this} to almost equal #{exp}',
+            'expected #{this} to not almost equal #{exp}',
+            val,
+            this._obj,
+            true
+          )
+        } else {
+          return _super.apply(this, arguments)
+        }
+      }
+    }
+
+    /**
+     * Returns a new deep equality function to override
+     * .eql, .eqls that tests 'almost' equality if both corresponding
+     * values are numbers and tolerance flag is set
+     */
+    function overrideAssertEql (_super) {
+      return function assertEql (val, msg) {
+        if (msg) flag(this, 'message', msg)
+
+        var tolerance = flag(this, 'tolerance')
+
+        if (tolerance) {
+          this.assert(
+            deepEqual(val, this._obj, { comparator: comparator(tolerance) }),
+            'expected #{this} to deeply almost equal #{exp}',
+            'expected #{this} to not deeply almost equal #{exp}',
+            val,
+            this._obj,
+            true
+          )
+        } else {
+          return _super.apply(this, arguments)
+        }
+      }
+    }
+
+    /**
+     * .almost() method. To be used at the end of the chain like:
+     * expect(4).to.not.be.almost(5, 1.5). Simply adds tolerance flag then calls
+     * .equal. This will redirect to .eql if deep flag set
+     */
+    function method (val, toleranceOverride) {
+      var tolerance = toleranceOverride || standardTolerance
+
+      flag(this, 'tolerance', tolerance)
+
+      return this.equal(val)
+    }
+
+    /**
+     * .almost chainable property to be used like:
+     * expect(3.99999999).to.almost.equal(4). Simply adds
+     * tolerance flag to be read by equality checking methods
+     */
+    function chainingBehavior () {
+      flag(this, 'tolerance', standardTolerance)
+    }
+
+    Assertion.addChainableMethod('almost', method, chainingBehavior)
+
+    Assertion.overwriteMethod('equal', overrideAssertEqual)
+    Assertion.overwriteMethod('equals', overrideAssertEqual)
+    Assertion.overwriteMethod('eq', overrideAssertEqual)
+
+    Assertion.overwriteMethod('eql', overrideAssertEql)
+    Assertion.overwriteMethod('eqls', overrideAssertEql)
+  }
+}
+
+module.exports = chaiAlmost
+;
+return module.exports;
+},
+0: function (require, module, exports) {
+var chai, divs, expect, i, resetDivs, styles;
+
+this.Css = window.quickcss;
+
+chai = require(1);
+
+chai.use(require(2));
+
+mocha.setup('tdd');
+
+mocha.slow(400);
+
+mocha.timeout(12000);
+
+if (!window.__karma__) {
+  mocha.bail();
+}
+
+expect = chai.expect;
+
+divs = $(((function() {
+  var j, results;
+  results = [];
+  for (i = j = 1; j <= 3; i = ++j) {
+    results.push('<div />');
+  }
+  return results;
+})()).join('')).appendTo('body');
+
+styles = divs.toArray().map(function(div) {
+  return getComputedStyle(div);
+});
+
+resetDivs = function() {
+  var div, j, len;
+  for (j = 0, len = divs.length; j < len; j++) {
+    div = divs[j];
+    div.removeAttribute('style');
+    div.style.width = '40px';
+    div.style.height = '40px';
+    div.style.backgroundColor = 'blue';
+  }
+};
+
+suite("QuickCss", function() {
+  setup(resetDivs);
+  suiteTeardown(resetDivs);
+  test("Apply Basic Styles", function() {
+    Css(divs[0], 'width', '10px');
+    expect(styles[0].width).to.equal('10px');
+    Css(divs[1], 'width', '50vw');
+    expect(divs[1].style.width).to.equal('50vw');
+    return expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+  });
+  test("Suffix unit-less values for length properties", function() {
+    Css(divs[0], 'width', '10');
+    Css(divs[1], 'width', 10);
+    Css(divs[2], 'width', '10%');
+    expect(divs[0].style.width).to.equal('10px');
+    expect(divs[1].style.width).to.equal('10px');
+    expect(divs[2].style.width).to.equal('10%');
+    expect(styles[0].width).to.equal('10px');
+    expect(styles[1].width).to.equal('10px');
+    expect(Math.round(parseFloat(styles[2].width))).not.to.equal(40);
+    Css(divs[0], 'marginTop', '10');
+    Css(divs[1], 'marginTop', 10);
+    Css(divs[2], 'marginTop', '10%');
+    expect(divs[0].style.marginTop).to.equal('10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(divs[2].style.marginTop).to.equal('10%');
+    Css(divs[0], 'fontSize', '10');
+    Css(divs[1], 'fontSize', 10);
+    Css(divs[2], 'fontSize', '10%');
+    expect(divs[0].style.fontSize).to.equal('10px');
+    expect(divs[1].style.fontSize).to.equal('10px');
+    expect(divs[2].style.fontSize).to.equal('10%');
+    Css(divs[0], 'lineHeight', '10');
+    Css(divs[1], 'lineHeight', 10);
+    Css(divs[2], 'lineHeight', '10%');
+    expect(divs[0].style.lineHeight).to.equal('10em');
+    expect(divs[1].style.lineHeight).to.equal('10em');
+    return expect(divs[2].style.lineHeight).to.equal('10%');
+  });
+  test("Suffix won't be added for unit-less values on non-length properties", function() {
+    Css(divs[0], 'width', 'auto');
+    expect(divs[0].style.width).to.equal('auto');
+    expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+    Css(divs[1], 'opacity', .5);
+    expect(divs[1].style.opacity).to.equal('0.5');
+    return expect(styles[1].opacity).to.equal('0.5');
+  });
+  test("An iterable collection of elements can be passed", function() {
+    Css(divs, 'width', 15);
+    expect(divs[0].style.width).to.equal('15px');
+    expect(divs[1].style.width).to.equal('15px');
+    return expect(divs[2].style.width).to.equal('15px');
+  });
+  test("A style object can be passed", function() {
+    Css(divs[0], {
+      'position': 'fixed',
+      'width': '55',
+      'height': 12,
+      'opacity': 0.8
+    });
+    expect(divs[0].style.position).to.equal('fixed');
+    expect(divs[0].style.width).to.equal('55px');
+    expect(divs[0].style.height).to.equal('12px');
+    return expect(divs[0].style.opacity).to.equal('0.8');
+  });
+  test("An iterable collection of elements can be passed along with a style object", function() {
+    Css(divs, {
+      width: '32px',
+      height: '99px'
+    });
+    expect(divs[0].style.width).to.equal('32px');
+    expect(divs[1].style.width).to.equal('32px');
+    expect(divs[2].style.width).to.equal('32px');
+    expect(divs[0].style.height).to.equal('99px');
+    expect(divs[1].style.height).to.equal('99px');
+    return expect(divs[2].style.height).to.equal('99px');
+  });
+  test("Kebab-cased/camel-cased properties will be normalized", function() {
+    Css(divs[0], 'margin-top', '10px');
+    expect(divs[0].style.marginTop).to.equal('10px');
+    expect(styles[0].marginTop).to.equal('10px');
+    Css(divs[0], 'marginBottom', '12px');
+    expect(divs[0].style.marginBottom).to.equal('12px');
+    return expect(styles[0].marginBottom).to.equal('12px');
+  });
+  test("Invalid properties will be ignored", function() {
+    Css(divs[1], 'topMargin', '25px');
+    expect(divs[0].style.topMargin).not.to.exist;
+    return expect(styles[0].topMargin).not.to.exist;
+  });
+  test("If a value is not provided, the current computed value for the selected property will be returned", function() {
+    var computedValue;
+    Css(divs[2], 'marginTop', '5vh');
+    computedValue = styles[2].marginTop;
+    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
+    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
+    expect(Css(divs[2], 'marginTop')).to.equal(styles[2].marginTop);
+    return expect(Css(divs[2], 'topMargin')).to.equal(void 0);
+  });
+  test("If a null value is provided for a property, the property will be deleted", function() {
+    Css(divs[1], 'marginTop', '10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(styles[1].marginTop).to.equal('10px');
+    Css(divs[1], 'marginTop', null);
+    expect(divs[1].style.marginTop).to.equal('');
+    expect(styles[1].marginTop).to.equal('0px');
+    Css(divs[1], 'marginTop', '10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(styles[1].marginTop).to.equal('10px');
+    Css(divs[1], {
+      'marginTop': null
+    });
+    expect(divs[1].style.marginTop).to.equal('');
+    return expect(styles[1].marginTop).to.equal('0px');
+  });
+  return suite("animation", function() {
+    test(".animation(name, keyframes) will create a @keyframes rule", function() {
+      var lastEl;
+      lastEl = $(document.head).children().last()[0];
+      expect(lastEl.id).not.to.equal('quickcss');
+      Css.animation('myAnimation', {
+        '0%': {
+          transform: 'rotate(0deg)',
+          opacity: 1,
+          width: 100,
+          marginTop: 5
+        },
+        '50%': {
+          width: 150
+        },
+        '100%': {
+          transform: 'rotate(360deg)',
+          opacity: 0.5,
+          width: 50
+        }
+      });
+      lastEl = $(document.head).children().last()[0];
+      expect(lastEl.id).to.equal('quickcss');
+      expect(lastEl.innerHTML).to.include('keyframes myAnimation {');
+      expect(lastEl.innerHTML).to.include('0% {');
+      expect(lastEl.innerHTML).to.include('transform: rotate(0deg)');
+      expect(lastEl.innerHTML).to.include('opacity: 1');
+      expect(lastEl.innerHTML).to.include('width: 100px');
+      expect(lastEl.innerHTML).to.include('margin-top: 5px');
+      expect(lastEl.innerHTML).to.include('50% {');
+      expect(lastEl.innerHTML).to.include('width: 150px');
+      expect(lastEl.innerHTML).to.include('100% {');
+      expect(lastEl.innerHTML).to.include('transform: rotate(360deg)');
+      expect(lastEl.innerHTML).to.include('opacity: 0.5');
+      return expect(lastEl.innerHTML).to.include('width: 50px');
+    });
+    return test("calling .animation() with the same args multiple times should only insert the keyframes once", function() {
+      var animation, lastEl, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7;
+      animation = {
+        '0%': {
+          transform: 'rotate(0deg)'
+        },
+        '100%': {
+          transform: 'rotate(360deg)'
+        }
+      };
+      Css.animation('someAnimation', animation);
+      lastEl = $(document.head).children().last()[0];
+      expect(lastEl.innerHTML).to.include('keyframes someAnimation {');
+      expect((ref = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref.length : void 0).to.equal(1);
+      Css.animation('someAnimation', animation);
+      expect((ref1 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref1.length : void 0).to.equal(1);
+      Css.animation('someAnimation2', animation);
+      expect((ref2 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref2.length : void 0).to.equal(2);
+      expect((ref3 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref3.length : void 0).to.equal(1);
+      Css.animation('someAnimation2', animation);
+      expect((ref4 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref4.length : void 0).to.equal(2);
+      expect((ref5 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref5.length : void 0).to.equal(1);
+      Css.animation('someAnimation2', {
+        'from': {
+          width: 50
+        },
+        'to': {
+          width: 100
+        }
+      });
+      expect((ref6 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref6.length : void 0).to.equal(3);
+      return expect((ref7 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref7.length : void 0).to.equal(2);
+    });
+  });
+});
+
+require(3);
+
+;
+return module.exports;
+},
+34: function (require, module, exports) {
+/*!
+ * Chai - getOwnEnumerableProperties utility
+ * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Module dependancies
+ */
+
+var getOwnEnumerablePropertySymbols = require(33);
+
+/**
+ * ### .getOwnEnumerableProperties(object)
+ *
+ * This allows the retrieval of directly-owned enumerable property names and
+ * symbols of an object. This function is necessary because Object.keys only
+ * returns enumerable property names, not enumerable property symbols.
+ *
+ * @param {Object} object
+ * @returns {Array}
+ * @namespace Utils
+ * @name getOwnEnumerableProperties
+ * @api public
+ */
+
+module.exports = function getOwnEnumerableProperties(obj) {
+  return Object.keys(obj).concat(getOwnEnumerablePropertySymbols(obj));
+};
+;
+return module.exports;
+},
+16: function (require, module, exports) {
+'use strict';
+
+/* !
+ * Chai - pathval utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * @see https://github.com/logicalparadox/filtr
+ * MIT Licensed
+ */
+
+/**
+ * ### .hasProperty(object, name)
+ *
+ * This allows checking whether an object has own
+ * or inherited from prototype chain named property.
+ *
+ * Basically does the same thing as the `in`
+ * operator but works properly with null/undefined values
+ * and other primitives.
+ *
+ *     var obj = {
+ *         arr: ['a', 'b', 'c']
+ *       , str: 'Hello'
+ *     }
+ *
+ * The following would be the results.
+ *
+ *     hasProperty(obj, 'str');  // true
+ *     hasProperty(obj, 'constructor');  // true
+ *     hasProperty(obj, 'bar');  // false
+ *
+ *     hasProperty(obj.str, 'length'); // true
+ *     hasProperty(obj.str, 1);  // true
+ *     hasProperty(obj.str, 5);  // false
+ *
+ *     hasProperty(obj.arr, 'length');  // true
+ *     hasProperty(obj.arr, 2);  // true
+ *     hasProperty(obj.arr, 3);  // false
+ *
+ * @param {Object} object
+ * @param {String|Symbol} name
+ * @returns {Boolean} whether it exists
+ * @namespace Utils
+ * @name hasProperty
+ * @api public
+ */
+
+function hasProperty(obj, name) {
+  if (typeof obj === 'undefined' || obj === null) {
+    return false;
+  }
+
+  // The `in` operator does not work with primitives.
+  return name in Object(obj);
+}
+
+/* !
+ * ## parsePath(path)
+ *
+ * Helper function used to parse string object
+ * paths. Use in conjunction with `internalGetPathValue`.
+ *
+ *      var parsed = parsePath('myobject.property.subprop');
+ *
+ * ### Paths:
+ *
+ * * Can be infinitely deep and nested.
+ * * Arrays are also valid using the formal `myobject.document[3].property`.
+ * * Literal dots and brackets (not delimiter) must be backslash-escaped.
+ *
+ * @param {String} path
+ * @returns {Object} parsed
+ * @api private
+ */
+
+function parsePath(path) {
+  var str = path.replace(/([^\\])\[/g, '$1.[');
+  var parts = str.match(/(\\\.|[^.]+?)+/g);
+  return parts.map(function mapMatches(value) {
+    var regexp = /^\[(\d+)\]$/;
+    var mArr = regexp.exec(value);
+    var parsed = null;
+    if (mArr) {
+      parsed = { i: parseFloat(mArr[1]) };
+    } else {
+      parsed = { p: value.replace(/\\([.\[\]])/g, '$1') };
+    }
+
+    return parsed;
+  });
+}
+
+/* !
+ * ## internalGetPathValue(obj, parsed[, pathDepth])
+ *
+ * Helper companion function for `.parsePath` that returns
+ * the value located at the parsed address.
+ *
+ *      var value = getPathValue(obj, parsed);
+ *
+ * @param {Object} object to search against
+ * @param {Object} parsed definition from `parsePath`.
+ * @param {Number} depth (nesting level) of the property we want to retrieve
+ * @returns {Object|Undefined} value
+ * @api private
+ */
+
+function internalGetPathValue(obj, parsed, pathDepth) {
+  var temporaryValue = obj;
+  var res = null;
+  pathDepth = (typeof pathDepth === 'undefined' ? parsed.length : pathDepth);
+
+  for (var i = 0; i < pathDepth; i++) {
+    var part = parsed[i];
+    if (temporaryValue) {
+      if (typeof part.p === 'undefined') {
+        temporaryValue = temporaryValue[part.i];
+      } else {
+        temporaryValue = temporaryValue[part.p];
+      }
+
+      if (i === (pathDepth - 1)) {
+        res = temporaryValue;
+      }
+    }
+  }
+
+  return res;
+}
+
+/* !
+ * ## internalSetPathValue(obj, value, parsed)
+ *
+ * Companion function for `parsePath` that sets
+ * the value located at a parsed address.
+ *
+ *  internalSetPathValue(obj, 'value', parsed);
+ *
+ * @param {Object} object to search and define on
+ * @param {*} value to use upon set
+ * @param {Object} parsed definition from `parsePath`
+ * @api private
+ */
+
+function internalSetPathValue(obj, val, parsed) {
+  var tempObj = obj;
+  var pathDepth = parsed.length;
+  var part = null;
+  // Here we iterate through every part of the path
+  for (var i = 0; i < pathDepth; i++) {
+    var propName = null;
+    var propVal = null;
+    part = parsed[i];
+
+    // If it's the last part of the path, we set the 'propName' value with the property name
+    if (i === (pathDepth - 1)) {
+      propName = typeof part.p === 'undefined' ? part.i : part.p;
+      // Now we set the property with the name held by 'propName' on object with the desired val
+      tempObj[propName] = val;
+    } else if (typeof part.p !== 'undefined' && tempObj[part.p]) {
+      tempObj = tempObj[part.p];
+    } else if (typeof part.i !== 'undefined' && tempObj[part.i]) {
+      tempObj = tempObj[part.i];
+    } else {
+      // If the obj doesn't have the property we create one with that name to define it
+      var next = parsed[i + 1];
+      // Here we set the name of the property which will be defined
+      propName = typeof part.p === 'undefined' ? part.i : part.p;
+      // Here we decide if this property will be an array or a new object
+      propVal = typeof next.p === 'undefined' ? [] : {};
+      tempObj[propName] = propVal;
+      tempObj = tempObj[propName];
+    }
+  }
+}
+
+/**
+ * ### .getPathInfo(object, path)
+ *
+ * This allows the retrieval of property info in an
+ * object given a string path.
+ *
+ * The path info consists of an object with the
+ * following properties:
+ *
+ * * parent - The parent object of the property referenced by `path`
+ * * name - The name of the final property, a number if it was an array indexer
+ * * value - The value of the property, if it exists, otherwise `undefined`
+ * * exists - Whether the property exists or not
+ *
+ * @param {Object} object
+ * @param {String} path
+ * @returns {Object} info
+ * @namespace Utils
+ * @name getPathInfo
+ * @api public
+ */
+
+function getPathInfo(obj, path) {
+  var parsed = parsePath(path);
+  var last = parsed[parsed.length - 1];
+  var info = {
+    parent: parsed.length > 1 ? internalGetPathValue(obj, parsed, parsed.length - 1) : obj,
+    name: last.p || last.i,
+    value: internalGetPathValue(obj, parsed),
+  };
+  info.exists = hasProperty(info.parent, info.name);
+
+  return info;
+}
+
+/**
+ * ### .getPathValue(object, path)
+ *
+ * This allows the retrieval of values in an
+ * object given a string path.
+ *
+ *     var obj = {
+ *         prop1: {
+ *             arr: ['a', 'b', 'c']
+ *           , str: 'Hello'
+ *         }
+ *       , prop2: {
+ *             arr: [ { nested: 'Universe' } ]
+ *           , str: 'Hello again!'
+ *         }
+ *     }
+ *
+ * The following would be the results.
+ *
+ *     getPathValue(obj, 'prop1.str'); // Hello
+ *     getPathValue(obj, 'prop1.att[2]'); // b
+ *     getPathValue(obj, 'prop2.arr[0].nested'); // Universe
+ *
+ * @param {Object} object
+ * @param {String} path
+ * @returns {Object} value or `undefined`
+ * @namespace Utils
+ * @name getPathValue
+ * @api public
+ */
+
+function getPathValue(obj, path) {
+  var info = getPathInfo(obj, path);
+  return info.value;
+}
+
+/**
+ * ### .setPathValue(object, path, value)
+ *
+ * Define the value in an object at a given string path.
+ *
+ * ```js
+ * var obj = {
+ *     prop1: {
+ *         arr: ['a', 'b', 'c']
+ *       , str: 'Hello'
+ *     }
+ *   , prop2: {
+ *         arr: [ { nested: 'Universe' } ]
+ *       , str: 'Hello again!'
+ *     }
+ * };
+ * ```
+ *
+ * The following would be acceptable.
+ *
+ * ```js
+ * var properties = require('tea-properties');
+ * properties.set(obj, 'prop1.str', 'Hello Universe!');
+ * properties.set(obj, 'prop1.arr[2]', 'B');
+ * properties.set(obj, 'prop2.arr[0].nested.value', { hello: 'universe' });
+ * ```
+ *
+ * @param {Object} object
+ * @param {String} path
+ * @param {Mixed} value
+ * @api private
+ */
+
+function setPathValue(obj, path, val) {
+  var parsed = parsePath(path);
+  internalSetPathValue(obj, val, parsed);
+  return obj;
+}
+
+module.exports = {
+  hasProperty: hasProperty,
+  getPathInfo: getPathInfo,
+  getPathValue: getPathValue,
+  setPathValue: setPathValue,
+};
+;
+return module.exports;
+},
+26: function (require, module, exports) {
+/*!
+ * Chai - addProperty utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+var chai = require(4);
+var flag = require(23);
+var isProxyEnabled = require(38);
+var transferFlags = require(24);
+
+/**
+ * ### .addProperty(ctx, name, getter)
+ *
+ * Adds a property to the prototype of an object.
+ *
+ *     utils.addProperty(chai.Assertion.prototype, 'foo', function () {
+ *       var obj = utils.flag(this, 'object');
+ *       new chai.Assertion(obj).to.be.instanceof(Foo);
+ *     });
+ *
+ * Can also be accessed directly from `chai.Assertion`.
+ *
+ *     chai.Assertion.addProperty('foo', fn);
+ *
+ * Then can be used as any other assertion.
+ *
+ *     expect(myFoo).to.be.foo;
+ *
+ * @param {Object} ctx object to which the property is added
+ * @param {String} name of property to add
+ * @param {Function} getter function to be used for name
+ * @namespace Utils
+ * @name addProperty
+ * @api public
+ */
+
+module.exports = function addProperty(ctx, name, getter) {
+  getter = getter === undefined ? new Function() : getter;
+
+  Object.defineProperty(ctx, name,
+    { get: function propertyGetter() {
+        // Setting the `ssfi` flag to `propertyGetter` causes this function to
+        // be the starting point for removing implementation frames from the
+        // stack trace of a failed assertion.
+        //
+        // However, we only want to use this function as the starting point if
+        // the `lockSsfi` flag isn't set and proxy protection is disabled.
+        //
+        // If the `lockSsfi` flag is set, then either this assertion has been
+        // overwritten by another assertion, or this assertion is being invoked
+        // from inside of another assertion. In the first case, the `ssfi` flag
+        // has already been set by the overwriting assertion. In the second
+        // case, the `ssfi` flag has already been set by the outer assertion.
+        //
+        // If proxy protection is enabled, then the `ssfi` flag has already been
+        // set by the proxy getter.
+        if (!isProxyEnabled() && !flag(this, 'lockSsfi')) {
+          flag(this, 'ssfi', propertyGetter);
+        }
+
+        var result = getter.call(this);
+        if (result !== undefined)
+          return result;
+
+        var newAssertion = new chai.Assertion();
+        transferFlags(this, newAssertion);
+        return newAssertion;
+      }
+    , configurable: true
+  });
+};
+;
+return module.exports;
+},
+6: function (require, module, exports) {
+'use strict';
+
+/* !
+ * type-detect
+ * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+var promiseExists = typeof Promise === 'function';
+var globalObject = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : self; // eslint-disable-line
+var isDom = 'location' in globalObject && 'document' in globalObject;
+var symbolExists = typeof Symbol !== 'undefined';
+var mapExists = typeof Map !== 'undefined';
+var setExists = typeof Set !== 'undefined';
+var weakMapExists = typeof WeakMap !== 'undefined';
+var weakSetExists = typeof WeakSet !== 'undefined';
+var dataViewExists = typeof DataView !== 'undefined';
+var symbolIteratorExists = symbolExists && typeof Symbol.iterator !== 'undefined';
+var symbolToStringTagExists = symbolExists && typeof Symbol.toStringTag !== 'undefined';
+var setEntriesExists = setExists && typeof Set.prototype.entries === 'function';
+var mapEntriesExists = mapExists && typeof Map.prototype.entries === 'function';
+var setIteratorPrototype = setEntriesExists && Object.getPrototypeOf(new Set().entries());
+var mapIteratorPrototype = mapEntriesExists && Object.getPrototypeOf(new Map().entries());
+var arrayIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
+var arrayIteratorPrototype = arrayIteratorExists && Object.getPrototypeOf([][Symbol.iterator]());
+var stringIteratorExists = symbolIteratorExists && typeof String.prototype[Symbol.iterator] === 'function';
+var stringIteratorPrototype = stringIteratorExists && Object.getPrototypeOf(''[Symbol.iterator]());
+var toStringLeftSliceLength = 8;
+var toStringRightSliceLength = -1;
+/**
+ * ### typeOf (obj)
+ *
+ * Uses `Object.prototype.toString` to determine the type of an object,
+ * normalising behaviour across engine versions & well optimised.
+ *
+ * @param {Mixed} object
+ * @return {String} object type
+ * @api public
+ */
+module.exports = function typeDetect(obj) {
+  /* ! Speed optimisation
+   * Pre:
+   *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
+   *   boolean literal    x 1,424,138 ops/sec ±4.54% (75 runs sampled)
+   *   number literal     x 1,653,153 ops/sec ±1.91% (82 runs sampled)
+   *   undefined          x 9,978,660 ops/sec ±1.92% (75 runs sampled)
+   *   function           x 2,556,769 ops/sec ±1.73% (77 runs sampled)
+   * Post:
+   *   string literal     x 38,564,796 ops/sec ±1.15% (79 runs sampled)
+   *   boolean literal    x 31,148,940 ops/sec ±1.10% (79 runs sampled)
+   *   number literal     x 32,679,330 ops/sec ±1.90% (78 runs sampled)
+   *   undefined          x 32,363,368 ops/sec ±1.07% (82 runs sampled)
+   *   function           x 31,296,870 ops/sec ±0.96% (83 runs sampled)
+   */
+  var typeofObj = typeof obj;
+  if (typeofObj !== 'object') {
+    return typeofObj;
+  }
+
+  /* ! Speed optimisation
+   * Pre:
+   *   null               x 28,645,765 ops/sec ±1.17% (82 runs sampled)
+   * Post:
+   *   null               x 36,428,962 ops/sec ±1.37% (84 runs sampled)
+   */
+  if (obj === null) {
+    return 'null';
+  }
+
+  /* ! Spec Conformance
+   * Test: `Object.prototype.toString.call(window)``
+   *  - Node === "[object global]"
+   *  - Chrome === "[object global]"
+   *  - Firefox === "[object Window]"
+   *  - PhantomJS === "[object Window]"
+   *  - Safari === "[object Window]"
+   *  - IE 11 === "[object Window]"
+   *  - IE Edge === "[object Window]"
+   * Test: `Object.prototype.toString.call(this)``
+   *  - Chrome Worker === "[object global]"
+   *  - Firefox Worker === "[object DedicatedWorkerGlobalScope]"
+   *  - Safari Worker === "[object DedicatedWorkerGlobalScope]"
+   *  - IE 11 Worker === "[object WorkerGlobalScope]"
+   *  - IE Edge Worker === "[object WorkerGlobalScope]"
+   */
+  if (obj === globalObject) {
+    return 'global';
+  }
+
+  /* ! Speed optimisation
+   * Pre:
+   *   array literal      x 2,888,352 ops/sec ±0.67% (82 runs sampled)
+   * Post:
+   *   array literal      x 22,479,650 ops/sec ±0.96% (81 runs sampled)
+   */
+  if (
+    Array.isArray(obj) &&
+    (symbolToStringTagExists === false || !(Symbol.toStringTag in obj))
+  ) {
+    return 'Array';
+  }
+
+  if (isDom) {
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/browsers.html#location)
+     * WhatWG HTML$7.7.3 - The `Location` interface
+     * Test: `Object.prototype.toString.call(window.location)``
+     *  - IE <=11 === "[object Object]"
+     *  - IE Edge <=13 === "[object Object]"
+     */
+    if (obj === globalObject.location) {
+      return 'Location';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#document)
+     * WhatWG HTML$3.1.1 - The `Document` object
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26809268)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     *       WhatWG HTML states:
+     *         > For historical reasons, Window objects must also have a
+     *         > writable, configurable, non-enumerable property named
+     *         > HTMLDocument whose value is the Document interface object.
+     * Test: `Object.prototype.toString.call(document)``
+     *  - Chrome === "[object HTMLDocument]"
+     *  - Firefox === "[object HTMLDocument]"
+     *  - Safari === "[object HTMLDocument]"
+     *  - IE <=10 === "[object Document]"
+     *  - IE 11 === "[object HTMLDocument]"
+     *  - IE Edge <=13 === "[object HTMLDocument]"
+     */
+    if (obj === globalObject.document) {
+      return 'Document';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
+     * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
+     * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
+     *  - IE <=10 === "[object MSMimeTypesCollection]"
+     */
+    if (obj === (globalObject.navigator || {}).mimeTypes) {
+      return 'MimeTypeArray';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+     * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
+     * Test: `Object.prototype.toString.call(navigator.plugins)``
+     *  - IE <=10 === "[object MSPluginsCollection]"
+     */
+    if (obj === (globalObject.navigator || {}).plugins) {
+      return 'PluginArray';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+     * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
+     * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
+     *  - IE <=10 === "[object HTMLBlockElement]"
+     */
+    if (obj instanceof HTMLElement && obj.tagName === 'BLOCKQUOTE') {
+      return 'HTMLQuoteElement';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#htmltabledatacellelement)
+     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     * Test: Object.prototype.toString.call(document.createElement('td'))
+     *  - Chrome === "[object HTMLTableCellElement]"
+     *  - Firefox === "[object HTMLTableCellElement]"
+     *  - Safari === "[object HTMLTableCellElement]"
+     */
+    if (obj instanceof HTMLElement && obj.tagName === 'TD') {
+      return 'HTMLTableDataCellElement';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#htmltableheadercellelement)
+     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     * Test: Object.prototype.toString.call(document.createElement('th'))
+     *  - Chrome === "[object HTMLTableCellElement]"
+     *  - Firefox === "[object HTMLTableCellElement]"
+     *  - Safari === "[object HTMLTableCellElement]"
+     */
+    if (obj instanceof HTMLElement && obj.tagName === 'TH') {
+      return 'HTMLTableHeaderCellElement';
+    }
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   Float64Array       x 625,644 ops/sec ±1.58% (80 runs sampled)
+  *   Float32Array       x 1,279,852 ops/sec ±2.91% (77 runs sampled)
+  *   Uint32Array        x 1,178,185 ops/sec ±1.95% (83 runs sampled)
+  *   Uint16Array        x 1,008,380 ops/sec ±2.25% (80 runs sampled)
+  *   Uint8Array         x 1,128,040 ops/sec ±2.11% (81 runs sampled)
+  *   Int32Array         x 1,170,119 ops/sec ±2.88% (80 runs sampled)
+  *   Int16Array         x 1,176,348 ops/sec ±5.79% (86 runs sampled)
+  *   Int8Array          x 1,058,707 ops/sec ±4.94% (77 runs sampled)
+  *   Uint8ClampedArray  x 1,110,633 ops/sec ±4.20% (80 runs sampled)
+  * Post:
+  *   Float64Array       x 7,105,671 ops/sec ±13.47% (64 runs sampled)
+  *   Float32Array       x 5,887,912 ops/sec ±1.46% (82 runs sampled)
+  *   Uint32Array        x 6,491,661 ops/sec ±1.76% (79 runs sampled)
+  *   Uint16Array        x 6,559,795 ops/sec ±1.67% (82 runs sampled)
+  *   Uint8Array         x 6,463,966 ops/sec ±1.43% (85 runs sampled)
+  *   Int32Array         x 5,641,841 ops/sec ±3.49% (81 runs sampled)
+  *   Int16Array         x 6,583,511 ops/sec ±1.98% (80 runs sampled)
+  *   Int8Array          x 6,606,078 ops/sec ±1.74% (81 runs sampled)
+  *   Uint8ClampedArray  x 6,602,224 ops/sec ±1.77% (83 runs sampled)
+  */
+  var stringTag = (symbolToStringTagExists && obj[Symbol.toStringTag]);
+  if (typeof stringTag === 'string') {
+    return stringTag;
+  }
+
+  var objPrototype = Object.getPrototypeOf(obj);
+  /* ! Speed optimisation
+  * Pre:
+  *   regex literal      x 1,772,385 ops/sec ±1.85% (77 runs sampled)
+  *   regex constructor  x 2,143,634 ops/sec ±2.46% (78 runs sampled)
+  * Post:
+  *   regex literal      x 3,928,009 ops/sec ±0.65% (78 runs sampled)
+  *   regex constructor  x 3,931,108 ops/sec ±0.58% (84 runs sampled)
+  */
+  if (objPrototype === RegExp.prototype) {
+    return 'RegExp';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   date               x 2,130,074 ops/sec ±4.42% (68 runs sampled)
+  * Post:
+  *   date               x 3,953,779 ops/sec ±1.35% (77 runs sampled)
+  */
+  if (objPrototype === Date.prototype) {
+    return 'Date';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-promise.prototype-@@tostringtag)
+   * ES6$25.4.5.4 - Promise.prototype[@@toStringTag] should be "Promise":
+   * Test: `Object.prototype.toString.call(Promise.resolve())``
+   *  - Chrome <=47 === "[object Object]"
+   *  - Edge <=20 === "[object Object]"
+   *  - Firefox 29-Latest === "[object Promise]"
+   *  - Safari 7.1-Latest === "[object Promise]"
+   */
+  if (promiseExists && objPrototype === Promise.prototype) {
+    return 'Promise';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   set                x 2,222,186 ops/sec ±1.31% (82 runs sampled)
+  * Post:
+  *   set                x 4,545,879 ops/sec ±1.13% (83 runs sampled)
+  */
+  if (setExists && objPrototype === Set.prototype) {
+    return 'Set';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   map                x 2,396,842 ops/sec ±1.59% (81 runs sampled)
+  * Post:
+  *   map                x 4,183,945 ops/sec ±6.59% (82 runs sampled)
+  */
+  if (mapExists && objPrototype === Map.prototype) {
+    return 'Map';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   weakset            x 1,323,220 ops/sec ±2.17% (76 runs sampled)
+  * Post:
+  *   weakset            x 4,237,510 ops/sec ±2.01% (77 runs sampled)
+  */
+  if (weakSetExists && objPrototype === WeakSet.prototype) {
+    return 'WeakSet';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   weakmap            x 1,500,260 ops/sec ±2.02% (78 runs sampled)
+  * Post:
+  *   weakmap            x 3,881,384 ops/sec ±1.45% (82 runs sampled)
+  */
+  if (weakMapExists && objPrototype === WeakMap.prototype) {
+    return 'WeakMap';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-dataview.prototype-@@tostringtag)
+   * ES6$24.2.4.21 - DataView.prototype[@@toStringTag] should be "DataView":
+   * Test: `Object.prototype.toString.call(new DataView(new ArrayBuffer(1)))``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (dataViewExists && objPrototype === DataView.prototype) {
+    return 'DataView';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%mapiteratorprototype%-@@tostringtag)
+   * ES6$23.1.5.2.2 - %MapIteratorPrototype%[@@toStringTag] should be "Map Iterator":
+   * Test: `Object.prototype.toString.call(new Map().entries())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (mapExists && objPrototype === mapIteratorPrototype) {
+    return 'Map Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%setiteratorprototype%-@@tostringtag)
+   * ES6$23.2.5.2.2 - %SetIteratorPrototype%[@@toStringTag] should be "Set Iterator":
+   * Test: `Object.prototype.toString.call(new Set().entries())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (setExists && objPrototype === setIteratorPrototype) {
+    return 'Set Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%arrayiteratorprototype%-@@tostringtag)
+   * ES6$22.1.5.2.2 - %ArrayIteratorPrototype%[@@toStringTag] should be "Array Iterator":
+   * Test: `Object.prototype.toString.call([][Symbol.iterator]())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (arrayIteratorExists && objPrototype === arrayIteratorPrototype) {
+    return 'Array Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%stringiteratorprototype%-@@tostringtag)
+   * ES6$21.1.5.2.2 - %StringIteratorPrototype%[@@toStringTag] should be "String Iterator":
+   * Test: `Object.prototype.toString.call(''[Symbol.iterator]())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (stringIteratorExists && objPrototype === stringIteratorPrototype) {
+    return 'String Iterator';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   object from null   x 2,424,320 ops/sec ±1.67% (76 runs sampled)
+  * Post:
+  *   object from null   x 5,838,000 ops/sec ±0.99% (84 runs sampled)
+  */
+  if (objPrototype === null) {
+    return 'Object';
+  }
+
+  return Object
+    .prototype
+    .toString
+    .call(obj)
+    .slice(toStringLeftSliceLength, toStringRightSliceLength);
+};
+
+module.exports.typeDetect = module.exports;
+;
+return module.exports;
+},
+24: function (require, module, exports) {
+/*!
+ * Chai - transferFlags utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/**
+ * ### .transferFlags(assertion, object, includeAll = true)
+ *
+ * Transfer all the flags for `assertion` to `object`. If
+ * `includeAll` is set to `false`, then the base Chai
+ * assertion flags (namely `object`, `ssfi`, `lockSsfi`,
+ * and `message`) will not be transferred.
+ *
+ *
+ *     var newAssertion = new Assertion();
+ *     utils.transferFlags(assertion, newAssertion);
+ *
+ *     var anotherAsseriton = new Assertion(myObj);
+ *     utils.transferFlags(assertion, anotherAssertion, false);
+ *
+ * @param {Assertion} assertion the assertion to transfer the flags from
+ * @param {Object} object the object to transfer the flags to; usually a new assertion
+ * @param {Boolean} includeAll
+ * @namespace Utils
+ * @name transferFlags
+ * @api private
+ */
+
+module.exports = function transferFlags(assertion, object, includeAll) {
+  var flags = assertion.__flags || (assertion.__flags = Object.create(null));
+
+  if (!object.__flags) {
+    object.__flags = Object.create(null);
+  }
+
+  includeAll = arguments.length === 3 ? includeAll : true;
+
+  for (var flag in flags) {
+    if (includeAll ||
+        (flag !== 'object' && flag !== 'ssfi' && flag !== 'lockSsfi' && flag != 'message')) {
+      object.__flags[flag] = flags[flag];
+    }
+  }
+};
+;
+return module.exports;
+},
+31: function (require, module, exports) {
+/*!
+ * Chai - overwriteChainableMethod utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+var chai = require(4);
+var transferFlags = require(24);
+
+/**
+ * ### .overwriteChainableMethod(ctx, name, method, chainingBehavior)
+ *
+ * Overwites an already existing chainable method
+ * and provides access to the previous function or
+ * property.  Must return functions to be used for
+ * name.
+ *
+ *     utils.overwriteChainableMethod(chai.Assertion.prototype, 'lengthOf',
+ *       function (_super) {
+ *       }
+ *     , function (_super) {
+ *       }
+ *     );
+ *
+ * Can also be accessed directly from `chai.Assertion`.
+ *
+ *     chai.Assertion.overwriteChainableMethod('foo', fn, fn);
+ *
+ * Then can be used as any other assertion.
+ *
+ *     expect(myFoo).to.have.lengthOf(3);
+ *     expect(myFoo).to.have.lengthOf.above(3);
+ *
+ * @param {Object} ctx object whose method / property is to be overwritten
+ * @param {String} name of method / property to overwrite
+ * @param {Function} method function that returns a function to be used for name
+ * @param {Function} chainingBehavior function that returns a function to be used for property
+ * @namespace Utils
+ * @name overwriteChainableMethod
+ * @api public
+ */
+
+module.exports = function overwriteChainableMethod(ctx, name, method, chainingBehavior) {
+  var chainableBehavior = ctx.__methods[name];
+
+  var _chainingBehavior = chainableBehavior.chainingBehavior;
+  chainableBehavior.chainingBehavior = function overwritingChainableMethodGetter() {
+    var result = chainingBehavior(_chainingBehavior).call(this);
+    if (result !== undefined) {
+      return result;
+    }
+
+    var newAssertion = new chai.Assertion();
+    transferFlags(this, newAssertion);
+    return newAssertion;
+  };
+
+  var _method = chainableBehavior.method;
+  chainableBehavior.method = function overwritingChainableMethodWrapper() {
+    var result = method(_method).apply(this, arguments);
+    if (result !== undefined) {
+      return result;
+    }
+
+    var newAssertion = new chai.Assertion();
+    transferFlags(this, newAssertion);
+    return newAssertion;
+  };
+};
+;
+return module.exports;
+},
+5: function (require, module, exports) {
+'use strict';
+/* globals Symbol: true, Uint8Array: true, WeakMap: true */
+/*!
+ * deep-eql
+ * Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Module dependencies
+ */
+
+var type = require(15);
+function FakeMap() {
+  this.clear();
+}
+FakeMap.prototype = {
+  clear: function clearMap() {
+    this.keys = [];
+    this.values = [];
+    return this;
+  },
+  set: function setMap(key, value) {
+    var index = this.keys.indexOf(key);
+    if (index >= 0) {
+      this.values[index] = value;
+    } else {
+      this.keys.push(key);
+      this.values.push(value);
+    }
+    return this;
+  },
+  get: function getMap(key) {
+    return this.values[this.keys.indexOf(key)];
+  },
+  delete: function deleteMap(key) {
+    var index = this.keys.indexOf(key);
+    if (index >= 0) {
+      this.values = this.values.slice(0, index).concat(this.values.slice(index + 1));
+      this.keys = this.keys.slice(0, index).concat(this.keys.slice(index + 1));
+    }
+    return this;
+  },
+};
+
+var MemoizeMap = null;
+if (typeof WeakMap === 'function') {
+  MemoizeMap = WeakMap;
+} else {
+  MemoizeMap = FakeMap;
+}
+
+/*!
+ * Check to see if the MemoizeMap has recorded a result of the two operands
+ *
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @param {MemoizeMap} memoizeMap
+ * @returns {Boolean|null} result
+*/
+function memoizeCompare(leftHandOperand, rightHandOperand, memoizeMap) {
+  // Technically, WeakMap keys can *only* be objects, not primitives.
+  if (!memoizeMap || isPrimitive(leftHandOperand) || isPrimitive(rightHandOperand)) {
+    return null;
+  }
+  var leftHandMap = memoizeMap.get(leftHandOperand);
+  if (leftHandMap) {
+    var result = leftHandMap.get(rightHandOperand);
+    if (typeof result === 'boolean') {
+      return result;
+    }
+  }
+  return null;
+}
+
+/*!
+ * Set the result of the equality into the MemoizeMap
+ *
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @param {MemoizeMap} memoizeMap
+ * @param {Boolean} result
+*/
+function memoizeSet(leftHandOperand, rightHandOperand, memoizeMap, result) {
+  // Technically, WeakMap keys can *only* be objects, not primitives.
+  if (!memoizeMap || isPrimitive(leftHandOperand) || isPrimitive(rightHandOperand)) {
+    return;
+  }
+  var leftHandMap = memoizeMap.get(leftHandOperand);
+  if (leftHandMap) {
+    leftHandMap.set(rightHandOperand, result);
+  } else {
+    leftHandMap = new MemoizeMap();
+    leftHandMap.set(rightHandOperand, result);
+    memoizeMap.set(leftHandOperand, leftHandMap);
+  }
+}
+
+/*!
+ * Primary Export
+ */
+
+module.exports = deepEqual;
+module.exports.MemoizeMap = MemoizeMap;
+
+/**
+ * Assert deeply nested sameValue equality between two objects of any type.
+ *
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @param {Object} [options] (optional) Additional options
+ * @param {Array} [options.comparator] (optional) Override default algorithm, determining custom equality.
+ * @param {Array} [options.memoize] (optional) Provide a custom memoization object which will cache the results of
+    complex objects for a speed boost. By passing `false` you can disable memoization, but this will cause circular
+    references to blow the stack.
+ * @return {Boolean} equal match
+ */
+function deepEqual(leftHandOperand, rightHandOperand, options) {
+  // If we have a comparator, we can't assume anything; so bail to its check first.
+  if (options && options.comparator) {
+    return extensiveDeepEqual(leftHandOperand, rightHandOperand, options);
+  }
+
+  var simpleResult = simpleEqual(leftHandOperand, rightHandOperand);
+  if (simpleResult !== null) {
+    return simpleResult;
+  }
+
+  // Deeper comparisons are pushed through to a larger function
+  return extensiveDeepEqual(leftHandOperand, rightHandOperand, options);
+}
+
+/**
+ * Many comparisons can be canceled out early via simple equality or primitive checks.
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @return {Boolean|null} equal match
+ */
+function simpleEqual(leftHandOperand, rightHandOperand) {
+  // Equal references (except for Numbers) can be returned early
+  if (leftHandOperand === rightHandOperand) {
+    // Handle +-0 cases
+    return leftHandOperand !== 0 || 1 / leftHandOperand === 1 / rightHandOperand;
+  }
+
+  // handle NaN cases
+  if (
+    leftHandOperand !== leftHandOperand && // eslint-disable-line no-self-compare
+    rightHandOperand !== rightHandOperand // eslint-disable-line no-self-compare
+  ) {
+    return true;
+  }
+
+  // Anything that is not an 'object', i.e. symbols, functions, booleans, numbers,
+  // strings, and undefined, can be compared by reference.
+  if (isPrimitive(leftHandOperand) || isPrimitive(rightHandOperand)) {
+    // Easy out b/c it would have passed the first equality check
+    return false;
+  }
+  return null;
+}
+
+/*!
+ * The main logic of the `deepEqual` function.
+ *
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @param {Object} [options] (optional) Additional options
+ * @param {Array} [options.comparator] (optional) Override default algorithm, determining custom equality.
+ * @param {Array} [options.memoize] (optional) Provide a custom memoization object which will cache the results of
+    complex objects for a speed boost. By passing `false` you can disable memoization, but this will cause circular
+    references to blow the stack.
+ * @return {Boolean} equal match
+*/
+function extensiveDeepEqual(leftHandOperand, rightHandOperand, options) {
+  options = options || {};
+  options.memoize = options.memoize === false ? false : options.memoize || new MemoizeMap();
+  var comparator = options && options.comparator;
+
+  // Check if a memoized result exists.
+  var memoizeResultLeft = memoizeCompare(leftHandOperand, rightHandOperand, options.memoize);
+  if (memoizeResultLeft !== null) {
+    return memoizeResultLeft;
+  }
+  var memoizeResultRight = memoizeCompare(rightHandOperand, leftHandOperand, options.memoize);
+  if (memoizeResultRight !== null) {
+    return memoizeResultRight;
+  }
+
+  // If a comparator is present, use it.
+  if (comparator) {
+    var comparatorResult = comparator(leftHandOperand, rightHandOperand);
+    // Comparators may return null, in which case we want to go back to default behavior.
+    if (comparatorResult === false || comparatorResult === true) {
+      memoizeSet(leftHandOperand, rightHandOperand, options.memoize, comparatorResult);
+      return comparatorResult;
+    }
+    // To allow comparators to override *any* behavior, we ran them first. Since it didn't decide
+    // what to do, we need to make sure to return the basic tests first before we move on.
+    var simpleResult = simpleEqual(leftHandOperand, rightHandOperand);
+    if (simpleResult !== null) {
+      // Don't memoize this, it takes longer to set/retrieve than to just compare.
+      return simpleResult;
+    }
+  }
+
+  var leftHandType = type(leftHandOperand);
+  if (leftHandType !== type(rightHandOperand)) {
+    memoizeSet(leftHandOperand, rightHandOperand, options.memoize, false);
+    return false;
+  }
+
+  // Temporarily set the operands in the memoize object to prevent blowing the stack
+  memoizeSet(leftHandOperand, rightHandOperand, options.memoize, true);
+
+  var result = extensiveDeepEqualByType(leftHandOperand, rightHandOperand, leftHandType, options);
+  memoizeSet(leftHandOperand, rightHandOperand, options.memoize, result);
+  return result;
+}
+
+function extensiveDeepEqualByType(leftHandOperand, rightHandOperand, leftHandType, options) {
+  switch (leftHandType) {
+    case 'String':
+    case 'Number':
+    case 'Boolean':
+    case 'Date':
+      // If these types are their instance types (e.g. `new Number`) then re-deepEqual against their values
+      return deepEqual(leftHandOperand.valueOf(), rightHandOperand.valueOf());
+    case 'Promise':
+    case 'Symbol':
+    case 'function':
+    case 'WeakMap':
+    case 'WeakSet':
+    case 'Error':
+      return leftHandOperand === rightHandOperand;
+    case 'Arguments':
+    case 'Int8Array':
+    case 'Uint8Array':
+    case 'Uint8ClampedArray':
+    case 'Int16Array':
+    case 'Uint16Array':
+    case 'Int32Array':
+    case 'Uint32Array':
+    case 'Float32Array':
+    case 'Float64Array':
+    case 'Array':
+      return iterableEqual(leftHandOperand, rightHandOperand, options);
+    case 'RegExp':
+      return regexpEqual(leftHandOperand, rightHandOperand);
+    case 'Generator':
+      return generatorEqual(leftHandOperand, rightHandOperand, options);
+    case 'DataView':
+      return iterableEqual(new Uint8Array(leftHandOperand.buffer), new Uint8Array(rightHandOperand.buffer), options);
+    case 'ArrayBuffer':
+      return iterableEqual(new Uint8Array(leftHandOperand), new Uint8Array(rightHandOperand), options);
+    case 'Set':
+      return entriesEqual(leftHandOperand, rightHandOperand, options);
+    case 'Map':
+      return entriesEqual(leftHandOperand, rightHandOperand, options);
+    default:
+      return objectEqual(leftHandOperand, rightHandOperand, options);
+  }
+}
+
+/*!
+ * Compare two Regular Expressions for equality.
+ *
+ * @param {RegExp} leftHandOperand
+ * @param {RegExp} rightHandOperand
+ * @return {Boolean} result
+ */
+
+function regexpEqual(leftHandOperand, rightHandOperand) {
+  return leftHandOperand.toString() === rightHandOperand.toString();
+}
+
+/*!
+ * Compare two Sets/Maps for equality. Faster than other equality functions.
+ *
+ * @param {Set} leftHandOperand
+ * @param {Set} rightHandOperand
+ * @param {Object} [options] (Optional)
+ * @return {Boolean} result
+ */
+
+function entriesEqual(leftHandOperand, rightHandOperand, options) {
+  // IE11 doesn't support Set#entries or Set#@@iterator, so we need manually populate using Set#forEach
+  if (leftHandOperand.size !== rightHandOperand.size) {
+    return false;
+  }
+  if (leftHandOperand.size === 0) {
+    return true;
+  }
+  var leftHandItems = [];
+  var rightHandItems = [];
+  leftHandOperand.forEach(function gatherEntries(key, value) {
+    leftHandItems.push([ key, value ]);
+  });
+  rightHandOperand.forEach(function gatherEntries(key, value) {
+    rightHandItems.push([ key, value ]);
+  });
+  return iterableEqual(leftHandItems.sort(), rightHandItems.sort(), options);
+}
+
+/*!
+ * Simple equality for flat iterable objects such as Arrays, TypedArrays or Node.js buffers.
+ *
+ * @param {Iterable} leftHandOperand
+ * @param {Iterable} rightHandOperand
+ * @param {Object} [options] (Optional)
+ * @return {Boolean} result
+ */
+
+function iterableEqual(leftHandOperand, rightHandOperand, options) {
+  var length = leftHandOperand.length;
+  if (length !== rightHandOperand.length) {
+    return false;
+  }
+  if (length === 0) {
+    return true;
+  }
+  var index = -1;
+  while (++index < length) {
+    if (deepEqual(leftHandOperand[index], rightHandOperand[index], options) === false) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/*!
+ * Simple equality for generator objects such as those returned by generator functions.
+ *
+ * @param {Iterable} leftHandOperand
+ * @param {Iterable} rightHandOperand
+ * @param {Object} [options] (Optional)
+ * @return {Boolean} result
+ */
+
+function generatorEqual(leftHandOperand, rightHandOperand, options) {
+  return iterableEqual(getGeneratorEntries(leftHandOperand), getGeneratorEntries(rightHandOperand), options);
+}
+
+/*!
+ * Determine if the given object has an @@iterator function.
+ *
+ * @param {Object} target
+ * @return {Boolean} `true` if the object has an @@iterator function.
+ */
+function hasIteratorFunction(target) {
+  return typeof Symbol !== 'undefined' &&
+    typeof target === 'object' &&
+    typeof Symbol.iterator !== 'undefined' &&
+    typeof target[Symbol.iterator] === 'function';
+}
+
+/*!
+ * Gets all iterator entries from the given Object. If the Object has no @@iterator function, returns an empty array.
+ * This will consume the iterator - which could have side effects depending on the @@iterator implementation.
+ *
+ * @param {Object} target
+ * @returns {Array} an array of entries from the @@iterator function
+ */
+function getIteratorEntries(target) {
+  if (hasIteratorFunction(target)) {
+    try {
+      return getGeneratorEntries(target[Symbol.iterator]());
+    } catch (iteratorError) {
+      return [];
+    }
+  }
+  return [];
+}
+
+/*!
+ * Gets all entries from a Generator. This will consume the generator - which could have side effects.
+ *
+ * @param {Generator} target
+ * @returns {Array} an array of entries from the Generator.
+ */
+function getGeneratorEntries(generator) {
+  var generatorResult = generator.next();
+  var accumulator = [ generatorResult.value ];
+  while (generatorResult.done === false) {
+    generatorResult = generator.next();
+    accumulator.push(generatorResult.value);
+  }
+  return accumulator;
+}
+
+/*!
+ * Gets all own and inherited enumerable keys from a target.
+ *
+ * @param {Object} target
+ * @returns {Array} an array of own and inherited enumerable keys from the target.
+ */
+function getEnumerableKeys(target) {
+  var keys = [];
+  for (var key in target) {
+    keys.push(key);
+  }
+  return keys;
+}
+
+/*!
+ * Determines if two objects have matching values, given a set of keys. Defers to deepEqual for the equality check of
+ * each key. If any value of the given key is not equal, the function will return false (early).
+ *
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @param {Array} keys An array of keys to compare the values of leftHandOperand and rightHandOperand against
+ * @param {Object} [options] (Optional)
+ * @return {Boolean} result
+ */
+function keysEqual(leftHandOperand, rightHandOperand, keys, options) {
+  var length = keys.length;
+  if (length === 0) {
+    return true;
+  }
+  for (var i = 0; i < length; i += 1) {
+    if (deepEqual(leftHandOperand[keys[i]], rightHandOperand[keys[i]], options) === false) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/*!
+ * Recursively check the equality of two Objects. Once basic sameness has been established it will defer to `deepEqual`
+ * for each enumerable key in the object.
+ *
+ * @param {Mixed} leftHandOperand
+ * @param {Mixed} rightHandOperand
+ * @param {Object} [options] (Optional)
+ * @return {Boolean} result
+ */
+
+function objectEqual(leftHandOperand, rightHandOperand, options) {
+  var leftHandKeys = getEnumerableKeys(leftHandOperand);
+  var rightHandKeys = getEnumerableKeys(rightHandOperand);
+  if (leftHandKeys.length && leftHandKeys.length === rightHandKeys.length) {
+    leftHandKeys.sort();
+    rightHandKeys.sort();
+    if (iterableEqual(leftHandKeys, rightHandKeys) === false) {
+      return false;
+    }
+    return keysEqual(leftHandOperand, rightHandOperand, leftHandKeys, options);
+  }
+
+  var leftHandEntries = getIteratorEntries(leftHandOperand);
+  var rightHandEntries = getIteratorEntries(rightHandOperand);
+  if (leftHandEntries.length && leftHandEntries.length === rightHandEntries.length) {
+    leftHandEntries.sort();
+    rightHandEntries.sort();
+    return iterableEqual(leftHandEntries, rightHandEntries, options);
+  }
+
+  if (leftHandKeys.length === 0 &&
+      leftHandEntries.length === 0 &&
+      rightHandKeys.length === 0 &&
+      rightHandEntries.length === 0) {
+    return true;
+  }
+
+  return false;
+}
+
+/*!
+ * Returns true if the argument is a primitive.
+ *
+ * This intentionally returns true for all objects that can be compared by reference,
+ * including functions and symbols.
+ *
+ * @param {Mixed} value
+ * @return {Boolean} result
+ */
+function isPrimitive(value) {
+  return value === null || typeof value !== 'object';
+}
+;
+return module.exports;
+},
+32: function (require, module, exports) {
+/*!
+ * Chai - compareByInspect utility
+ * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Module dependancies
+ */
+
+var inspect = require(21);
+
+/**
+ * ### .compareByInspect(mixed, mixed)
+ *
+ * To be used as a compareFunction with Array.prototype.sort. Compares elements
+ * using inspect instead of default behavior of using toString so that Symbols
+ * and objects with irregular/missing toString can still be sorted without a
+ * TypeError.
+ *
+ * @param {Mixed} first element to compare
+ * @param {Mixed} second element to compare
+ * @returns {Number} -1 if 'a' should come before 'b'; otherwise 1 
+ * @name compareByInspect
+ * @namespace Utils
+ * @api public
+ */
+
+module.exports = function compareByInspect(a, b) {
+  return inspect(a) < inspect(b) ? -1 : 1;
+};
+;
+return module.exports;
+},
+12: function (require, module, exports) {
+/*!
+ * chai
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+module.exports = function (chai, util) {
+  chai.expect = function (val, message) {
+    return new chai.Assertion(val, message);
+  };
+
+  /**
+   * ### .fail(actual, expected, [message], [operator])
+   *
+   * Throw a failure.
+   *
+   * @name fail
+   * @param {Mixed} actual
+   * @param {Mixed} expected
+   * @param {String} message
+   * @param {String} operator
+   * @namespace BDD
+   * @api public
+   */
+
+  chai.expect.fail = function (actual, expected, message, operator) {
+    message = message || 'expect.fail()';
+    throw new chai.AssertionError(message, {
+        actual: actual
+      , expected: expected
+      , operator: operator
+    }, chai.expect.fail);
+  };
+};
+;
+return module.exports;
+},
+10: function (require, module, exports) {
+/*!
+ * chai
+ * http://chaijs.com
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+var config = require(9);
+
+module.exports = function (_chai, util) {
+  /*!
+   * Module dependencies.
+   */
+
+  var AssertionError = _chai.AssertionError
+    , flag = util.flag;
+
+  /*!
+   * Module export.
+   */
+
+  _chai.Assertion = Assertion;
+
+  /*!
+   * Assertion Constructor
+   *
+   * Creates object for chaining.
+   *
+   * `Assertion` objects contain metadata in the form of flags. Three flags can
+   * be assigned during instantiation by passing arguments to this constructor:
+   *
+   * - `object`: This flag contains the target of the assertion. For example, in
+   *   the assertion `expect(numKittens).to.equal(7);`, the `object` flag will
+   *   contain `numKittens` so that the `equal` assertion can reference it when
+   *   needed.
+   *
+   * - `message`: This flag contains an optional custom error message to be
+   *   prepended to the error message that's generated by the assertion when it
+   *   fails.
+   *
+   * - `ssfi`: This flag stands for "start stack function indicator". It
+   *   contains a function reference that serves as the starting point for
+   *   removing frames from the stack trace of the error that's created by the
+   *   assertion when it fails. The goal is to provide a cleaner stack trace to
+   *   end users by removing Chai's internal functions. Note that it only works
+   *   in environments that support `Error.captureStackTrace`, and only when
+   *   `Chai.config.includeStack` hasn't been set to `false`.
+   *
+   * - `lockSsfi`: This flag controls whether or not the given `ssfi` flag
+   *   should retain its current value, even as assertions are chained off of
+   *   this object. This is usually set to `true` when creating a new assertion
+   *   from within another assertion. It's also temporarily set to `true` before
+   *   an overwritten assertion gets called by the overwriting assertion.
+   *
+   * @param {Mixed} obj target of the assertion
+   * @param {String} msg (optional) custom error message
+   * @param {Function} ssfi (optional) starting point for removing stack frames
+   * @param {Boolean} lockSsfi (optional) whether or not the ssfi flag is locked
+   * @api private
+   */
+
+  function Assertion (obj, msg, ssfi, lockSsfi) {
+    flag(this, 'ssfi', ssfi || Assertion);
+    flag(this, 'lockSsfi', lockSsfi);
+    flag(this, 'object', obj);
+    flag(this, 'message', msg);
+
+    return util.proxify(this);
+  }
+
+  Object.defineProperty(Assertion, 'includeStack', {
+    get: function() {
+      console.warn('Assertion.includeStack is deprecated, use chai.config.includeStack instead.');
+      return config.includeStack;
+    },
+    set: function(value) {
+      console.warn('Assertion.includeStack is deprecated, use chai.config.includeStack instead.');
+      config.includeStack = value;
+    }
+  });
+
+  Object.defineProperty(Assertion, 'showDiff', {
+    get: function() {
+      console.warn('Assertion.showDiff is deprecated, use chai.config.showDiff instead.');
+      return config.showDiff;
+    },
+    set: function(value) {
+      console.warn('Assertion.showDiff is deprecated, use chai.config.showDiff instead.');
+      config.showDiff = value;
+    }
+  });
+
+  Assertion.addProperty = function (name, fn) {
+    util.addProperty(this.prototype, name, fn);
+  };
+
+  Assertion.addMethod = function (name, fn) {
+    util.addMethod(this.prototype, name, fn);
+  };
+
+  Assertion.addChainableMethod = function (name, fn, chainingBehavior) {
+    util.addChainableMethod(this.prototype, name, fn, chainingBehavior);
+  };
+
+  Assertion.overwriteProperty = function (name, fn) {
+    util.overwriteProperty(this.prototype, name, fn);
+  };
+
+  Assertion.overwriteMethod = function (name, fn) {
+    util.overwriteMethod(this.prototype, name, fn);
+  };
+
+  Assertion.overwriteChainableMethod = function (name, fn, chainingBehavior) {
+    util.overwriteChainableMethod(this.prototype, name, fn, chainingBehavior);
+  };
+
+  /**
+   * ### .assert(expression, message, negateMessage, expected, actual, showDiff)
+   *
+   * Executes an expression and check expectations. Throws AssertionError for reporting if test doesn't pass.
+   *
+   * @name assert
+   * @param {Philosophical} expression to be tested
+   * @param {String|Function} message or function that returns message to display if expression fails
+   * @param {String|Function} negatedMessage or function that returns negatedMessage to display if negated expression fails
+   * @param {Mixed} expected value (remember to check for negation)
+   * @param {Mixed} actual (optional) will default to `this.obj`
+   * @param {Boolean} showDiff (optional) when set to `true`, assert will display a diff in addition to the message if expression fails
+   * @api private
+   */
+
+  Assertion.prototype.assert = function (expr, msg, negateMsg, expected, _actual, showDiff) {
+    var ok = util.test(this, arguments);
+    if (false !== showDiff) showDiff = true;
+    if (undefined === expected && undefined === _actual) showDiff = false;
+    if (true !== config.showDiff) showDiff = false;
+
+    if (!ok) {
+      msg = util.getMessage(this, arguments);
+      var actual = util.getActual(this, arguments);
+      throw new AssertionError(msg, {
+          actual: actual
+        , expected: expected
+        , showDiff: showDiff
+      }, (config.includeStack) ? this.assert : flag(this, 'ssfi'));
+    }
+  };
+
+  /*!
+   * ### ._obj
+   *
+   * Quick reference to stored `actual` value for plugin developers.
+   *
+   * @api private
+   */
+
+  Object.defineProperty(Assertion.prototype, '_obj',
+    { get: function () {
+        return flag(this, 'object');
+      }
+    , set: function (val) {
+        flag(this, 'object', val);
+      }
+  });
+};
+;
+return module.exports;
+},
+21: function (require, module, exports) {
+// This is (almost) directly from Node.js utils
+// https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
+
+var getName = require(25);
+var getProperties = require(40);
+var getEnumerableProperties = require(41);
+var config = require(9);
+
+module.exports = inspect;
+
+/**
+ * ### .inspect(obj, [showHidden], [depth], [colors])
+ *
+ * Echoes the value of a value. Tries to print the value out
+ * in the best way possible given the different types.
+ *
+ * @param {Object} obj The object to print out.
+ * @param {Boolean} showHidden Flag that shows hidden (not enumerable)
+ *    properties of objects. Default is false.
+ * @param {Number} depth Depth in which to descend in object. Default is 2.
+ * @param {Boolean} colors Flag to turn on ANSI escape codes to color the
+ *    output. Default is false (no coloring).
+ * @namespace Utils
+ * @name inspect
+ */
+function inspect(obj, showHidden, depth, colors) {
+  var ctx = {
+    showHidden: showHidden,
+    seen: [],
+    stylize: function (str) { return str; }
+  };
+  return formatValue(ctx, obj, (typeof depth === 'undefined' ? 2 : depth));
+}
+
+// Returns true if object is a DOM element.
+var isDOMElement = function (object) {
+  if (typeof HTMLElement === 'object') {
+    return object instanceof HTMLElement;
+  } else {
+    return object &&
+      typeof object === 'object' &&
+      'nodeType' in object &&
+      object.nodeType === 1 &&
+      typeof object.nodeName === 'string';
+  }
+};
+
+function formatValue(ctx, value, recurseTimes) {
+  // Provide a hook for user-specified inspect functions.
+  // Check that value is an object with an inspect function on it
+  if (value && typeof value.inspect === 'function' &&
+      // Filter out the util module, it's inspect function is special
+      value.inspect !== exports.inspect &&
+      // Also filter out any prototype objects using the circular check.
+      !(value.constructor && value.constructor.prototype === value)) {
+    var ret = value.inspect(recurseTimes, ctx);
+    if (typeof ret !== 'string') {
+      ret = formatValue(ctx, ret, recurseTimes);
+    }
+    return ret;
+  }
+
+  // Primitive types cannot have properties
+  var primitive = formatPrimitive(ctx, value);
+  if (primitive) {
+    return primitive;
+  }
+
+  // If this is a DOM element, try to get the outer HTML.
+  if (isDOMElement(value)) {
+    if ('outerHTML' in value) {
+      return value.outerHTML;
+      // This value does not have an outerHTML attribute,
+      //   it could still be an XML element
+    } else {
+      // Attempt to serialize it
+      try {
+        if (document.xmlVersion) {
+          var xmlSerializer = new XMLSerializer();
+          return xmlSerializer.serializeToString(value);
+        } else {
+          // Firefox 11- do not support outerHTML
+          //   It does, however, support innerHTML
+          //   Use the following to render the element
+          var ns = "http://www.w3.org/1999/xhtml";
+          var container = document.createElementNS(ns, '_');
+
+          container.appendChild(value.cloneNode(false));
+          var html = container.innerHTML
+            .replace('><', '>' + value.innerHTML + '<');
+          container.innerHTML = '';
+          return html;
+        }
+      } catch (err) {
+        // This could be a non-native DOM implementation,
+        //   continue with the normal flow:
+        //   printing the element as if it is an object.
+      }
+    }
+  }
+
+  // Look up the keys of the object.
+  var visibleKeys = getEnumerableProperties(value);
+  var keys = ctx.showHidden ? getProperties(value) : visibleKeys;
+
+  var name, nameSuffix;
+
+  // Some type of object without properties can be shortcutted.
+  // In IE, errors have a single `stack` property, or if they are vanilla `Error`,
+  // a `stack` plus `description` property; ignore those for consistency.
+  if (keys.length === 0 || (isError(value) && (
+      (keys.length === 1 && keys[0] === 'stack') ||
+      (keys.length === 2 && keys[0] === 'description' && keys[1] === 'stack')
+     ))) {
+    if (typeof value === 'function') {
+      name = getName(value);
+      nameSuffix = name ? ': ' + name : '';
+      return ctx.stylize('[Function' + nameSuffix + ']', 'special');
+    }
+    if (isRegExp(value)) {
+      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
+    }
+    if (isDate(value)) {
+      return ctx.stylize(Date.prototype.toUTCString.call(value), 'date');
+    }
+    if (isError(value)) {
+      return formatError(value);
+    }
+  }
+
+  var base = ''
+    , array = false
+    , typedArray = false
+    , braces = ['{', '}'];
+
+  if (isTypedArray(value)) {
+    typedArray = true;
+    braces = ['[', ']'];
+  }
+
+  // Make Array say that they are Array
+  if (isArray(value)) {
+    array = true;
+    braces = ['[', ']'];
+  }
+
+  // Make functions say that they are functions
+  if (typeof value === 'function') {
+    name = getName(value);
+    nameSuffix = name ? ': ' + name : '';
+    base = ' [Function' + nameSuffix + ']';
+  }
+
+  // Make RegExps say that they are RegExps
+  if (isRegExp(value)) {
+    base = ' ' + RegExp.prototype.toString.call(value);
+  }
+
+  // Make dates with properties first say the date
+  if (isDate(value)) {
+    base = ' ' + Date.prototype.toUTCString.call(value);
+  }
+
+  // Make error with message first say the error
+  if (isError(value)) {
+    return formatError(value);
+  }
+
+  if (keys.length === 0 && (!array || value.length == 0)) {
+    return braces[0] + base + braces[1];
+  }
+
+  if (recurseTimes < 0) {
+    if (isRegExp(value)) {
+      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
+    } else {
+      return ctx.stylize('[Object]', 'special');
+    }
+  }
+
+  ctx.seen.push(value);
+
+  var output;
+  if (array) {
+    output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
+  } else if (typedArray) {
+    return formatTypedArray(value);
+  } else {
+    output = keys.map(function(key) {
+      return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
+    });
+  }
+
+  ctx.seen.pop();
+
+  return reduceToSingleString(output, base, braces);
+}
+
+
+function formatPrimitive(ctx, value) {
+  switch (typeof value) {
+    case 'undefined':
+      return ctx.stylize('undefined', 'undefined');
+
+    case 'string':
+      var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
+                                               .replace(/'/g, "\\'")
+                                               .replace(/\\"/g, '"') + '\'';
+      return ctx.stylize(simple, 'string');
+
+    case 'number':
+      if (value === 0 && (1/value) === -Infinity) {
+        return ctx.stylize('-0', 'number');
+      }
+      return ctx.stylize('' + value, 'number');
+
+    case 'boolean':
+      return ctx.stylize('' + value, 'boolean');
+
+    case 'symbol':
+      return ctx.stylize(value.toString(), 'symbol');
+  }
+  // For some reason typeof null is "object", so special case here.
+  if (value === null) {
+    return ctx.stylize('null', 'null');
+  }
+}
+
+
+function formatError(value) {
+  return '[' + Error.prototype.toString.call(value) + ']';
+}
+
+
+function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
+  var output = [];
+  for (var i = 0, l = value.length; i < l; ++i) {
+    if (Object.prototype.hasOwnProperty.call(value, String(i))) {
+      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
+          String(i), true));
+    } else {
+      output.push('');
+    }
+  }
+
+  keys.forEach(function(key) {
+    if (!key.match(/^\d+$/)) {
+      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
+          key, true));
+    }
+  });
+  return output;
+}
+
+function formatTypedArray(value) {
+  var str = '[ ';
+
+  for (var i = 0; i < value.length; ++i) {
+    if (str.length >= config.truncateThreshold - 7) {
+      str += '...';
+      break;
+    }
+    str += value[i] + ', ';
+  }
+  str += ' ]';
+
+  // Removing trailing `, ` if the array was not truncated
+  if (str.indexOf(',  ]') !== -1) {
+    str = str.replace(',  ]', ' ]');
+  }
+
+  return str;
+}
+
+function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
+  var name;
+  var propDescriptor = Object.getOwnPropertyDescriptor(value, key);
+  var str;
+
+  if (propDescriptor) {
+    if (propDescriptor.get) {
+      if (propDescriptor.set) {
+        str = ctx.stylize('[Getter/Setter]', 'special');
+      } else {
+        str = ctx.stylize('[Getter]', 'special');
+      }
+    } else {
+      if (propDescriptor.set) {
+        str = ctx.stylize('[Setter]', 'special');
+      }
+    }
+  }
+  if (visibleKeys.indexOf(key) < 0) {
+    name = '[' + key + ']';
+  }
+  if (!str) {
+    if (ctx.seen.indexOf(value[key]) < 0) {
+      if (recurseTimes === null) {
+        str = formatValue(ctx, value[key], null);
+      } else {
+        str = formatValue(ctx, value[key], recurseTimes - 1);
+      }
+      if (str.indexOf('\n') > -1) {
+        if (array) {
+          str = str.split('\n').map(function(line) {
+            return '  ' + line;
+          }).join('\n').substr(2);
+        } else {
+          str = '\n' + str.split('\n').map(function(line) {
+            return '   ' + line;
+          }).join('\n');
+        }
+      }
+    } else {
+      str = ctx.stylize('[Circular]', 'special');
+    }
+  }
+  if (typeof name === 'undefined') {
+    if (array && key.match(/^\d+$/)) {
+      return str;
+    }
+    name = JSON.stringify('' + key);
+    if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
+      name = name.substr(1, name.length - 2);
+      name = ctx.stylize(name, 'name');
+    } else {
+      name = name.replace(/'/g, "\\'")
+                 .replace(/\\"/g, '"')
+                 .replace(/(^"|"$)/g, "'");
+      name = ctx.stylize(name, 'string');
+    }
+  }
+
+  return name + ': ' + str;
+}
+
+
+function reduceToSingleString(output, base, braces) {
+  var numLinesEst = 0;
+  var length = output.reduce(function(prev, cur) {
+    numLinesEst++;
+    if (cur.indexOf('\n') >= 0) numLinesEst++;
+    return prev + cur.length + 1;
+  }, 0);
+
+  if (length > 60) {
+    return braces[0] +
+           (base === '' ? '' : base + '\n ') +
+           ' ' +
+           output.join(',\n  ') +
+           ' ' +
+           braces[1];
+  }
+
+  return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
+}
+
+function isTypedArray(ar) {
+  // Unfortunately there's no way to check if an object is a TypedArray
+  // We have to check if it's one of these types
+  return (typeof ar === 'object' && /\w+Array]$/.test(objectToString(ar)));
+}
+
+function isArray(ar) {
+  return Array.isArray(ar) ||
+         (typeof ar === 'object' && objectToString(ar) === '[object Array]');
+}
+
+function isRegExp(re) {
+  return typeof re === 'object' && objectToString(re) === '[object RegExp]';
+}
+
+function isDate(d) {
+  return typeof d === 'object' && objectToString(d) === '[object Date]';
+}
+
+function isError(e) {
+  return typeof e === 'object' && objectToString(e) === '[object Error]';
+}
+
+function objectToString(o) {
+  return Object.prototype.toString.call(o);
+}
+;
+return module.exports;
+},
+22: function (require, module, exports) {
+/*!
+ * Chai - flag utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Module dependancies
+ */
+
+var inspect = require(21);
+var config = require(9);
+
+/**
+ * ### .objDisplay(object)
+ *
+ * Determines if an object or an array matches
+ * criteria to be inspected in-line for error
+ * messages or should be truncated.
+ *
+ * @param {Mixed} javascript object to inspect
+ * @name objDisplay
+ * @namespace Utils
+ * @api public
+ */
+
+module.exports = function objDisplay(obj) {
+  var str = inspect(obj)
+    , type = Object.prototype.toString.call(obj);
+
+  if (config.truncateThreshold && str.length >= config.truncateThreshold) {
+    if (type === '[object Function]') {
+      return !obj.name || obj.name === ''
+        ? '[Function]'
+        : '[Function: ' + obj.name + ']';
+    } else if (type === '[object Array]') {
+      return '[ Array(' + obj.length + ') ]';
+    } else if (type === '[object Object]') {
+      var keys = Object.keys(obj)
+        , kstr = keys.length > 2
+          ? keys.splice(0, 2).join(', ') + ', ...'
+          : keys.join(', ');
+      return '{ Object (' + kstr + ') }';
+    } else {
+      return str;
+    }
+  } else {
+    return str;
+  }
+};
+;
+return module.exports;
+},
+8: function (require, module, exports) {
+/*!
+ * chai
+ * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Dependencies that are used for multiple exports are required here only once
+ */
+
+var pathval = require(16);
+
+/*!
+ * test utility
+ */
+
+exports.test = require(17);
+
+/*!
+ * type utility
+ */
+
+exports.type = require(6);
+
+/*!
+ * expectTypes utility
+ */
+exports.expectTypes = require(18);
+
+/*!
+ * message utility
+ */
+
+exports.getMessage = require(19);
+
+/*!
+ * actual utility
+ */
+
+exports.getActual = require(20);
+
+/*!
+ * Inspect util
+ */
+
+exports.inspect = require(21);
+
+/*!
+ * Object Display util
+ */
+
+exports.objDisplay = require(22);
+
+/*!
+ * Flag utility
+ */
+
+exports.flag = require(23);
+
+/*!
+ * Flag transferring utility
+ */
+
+exports.transferFlags = require(24);
+
+/*!
+ * Deep equal utility
+ */
+
+exports.eql = require(5);
+
+/*!
+ * Deep path info
+ */
+
+exports.getPathInfo = pathval.getPathInfo;
+
+/*!
+ * Check if a property exists
+ */
+
+exports.hasProperty = pathval.hasProperty;
+
+/*!
+ * Function name
+ */
+
+exports.getName = require(25);
+
+/*!
+ * add Property
+ */
+
+exports.addProperty = require(26);
+
+/*!
+ * add Method
+ */
+
+exports.addMethod = require(27);
+
+/*!
+ * overwrite Property
+ */
+
+exports.overwriteProperty = require(28);
+
+/*!
+ * overwrite Method
+ */
+
+exports.overwriteMethod = require(29);
+
+/*!
+ * Add a chainable method
+ */
+
+exports.addChainableMethod = require(30);
+
+/*!
+ * Overwrite chainable method
+ */
+
+exports.overwriteChainableMethod = require(31);
+
+/*!
+ * Compare by inspect method
+ */
+
+exports.compareByInspect = require(32);
+
+/*!
+ * Get own enumerable property symbols method
+ */
+
+exports.getOwnEnumerablePropertySymbols = require(33);
+
+/*!
+ * Get own enumerable properties method
+ */
+
+exports.getOwnEnumerableProperties = require(34);
+
+/*!
+ * Checks error against a given set of criteria
+ */
+
+exports.checkError = require(35);
+
+/*!
+ * Proxify util
+ */
+
+exports.proxify = require(36);
+
+/*!
+ * addLengthGuard util
+ */
+
+exports.addLengthGuard = require(37);
+
+/*!
+ * isProxyEnabled helper
+ */
+
+exports.isProxyEnabled = require(38);
+
+/*!
+ * isNaN method
+ */
+
+exports.isNaN = require(39);
+;
+return module.exports;
+},
+17: function (require, module, exports) {
+/*!
+ * Chai - test utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Module dependancies
+ */
+
+var flag = require(23);
+
+/**
+ * ### .test(object, expression)
+ *
+ * Test and object for expression.
+ *
+ * @param {Object} object (constructed Assertion)
+ * @param {Arguments} chai.Assertion.prototype.assert arguments
+ * @namespace Utils
+ * @name test
+ */
+
+module.exports = function test(obj, args) {
+  var negate = flag(obj, 'negate')
+    , expr = args[0];
+  return negate ? !expr : expr;
+};
+;
+return module.exports;
+},
+7: function (require, module, exports) {
+/*!
+ * assertion-error
+ * Copyright(c) 2013 Jake Luer <jake@qualiancy.com>
+ * MIT Licensed
+ */
+
+/*!
+ * Return a function that will copy properties from
+ * one object to another excluding any originally
+ * listed. Returned function will create a new `{}`.
+ *
+ * @param {String} excluded properties ...
+ * @return {Function}
+ */
+
+function exclude () {
+  var excludes = [].slice.call(arguments);
+
+  function excludeProps (res, obj) {
+    Object.keys(obj).forEach(function (key) {
+      if (!~excludes.indexOf(key)) res[key] = obj[key];
+    });
+  }
+
+  return function extendExclude () {
+    var args = [].slice.call(arguments)
+      , i = 0
+      , res = {};
+
+    for (; i < args.length; i++) {
+      excludeProps(res, args[i]);
+    }
+
+    return res;
+  };
+};
+
+/*!
+ * Primary Exports
+ */
+
+module.exports = AssertionError;
+
+/**
+ * ### AssertionError
+ *
+ * An extension of the JavaScript `Error` constructor for
+ * assertion and validation scenarios.
+ *
+ * @param {String} message
+ * @param {Object} properties to include (optional)
+ * @param {callee} start stack function (optional)
+ */
+
+function AssertionError (message, _props, ssf) {
+  var extend = exclude('name', 'message', 'stack', 'constructor', 'toJSON')
+    , props = extend(_props || {});
+
+  // default values
+  this.message = message || 'Unspecified AssertionError';
+  this.showDiff = false;
+
+  // copy from properties
+  for (var key in props) {
+    this[key] = props[key];
+  }
+
+  // capture stack trace
+  ssf = ssf || arguments.callee;
+  if (ssf && Error.captureStackTrace) {
+    Error.captureStackTrace(this, ssf);
+  } else {
+    try {
+      throw new Error();
+    } catch(e) {
+      this.stack = e.stack;
+    }
+  }
+}
+
+/*!
+ * Inherit from Error.prototype
+ */
+
+AssertionError.prototype = Object.create(Error.prototype);
+
+/*!
+ * Statically set name
+ */
+
+AssertionError.prototype.name = 'AssertionError';
+
+/*!
+ * Ensure correct constructor
+ */
+
+AssertionError.prototype.constructor = AssertionError;
+
+/**
+ * Allow errors to be converted to JSON for static transfer.
+ *
+ * @param {Boolean} include stack (default: `true`)
+ * @return {Object} object that can be `JSON.stringify`
+ */
+
+AssertionError.prototype.toJSON = function (stack) {
+  var extend = exclude('constructor', 'toJSON', 'stack')
+    , props = extend({ name: this.name }, this);
+
+  // include stack if exists and not turned off
+  if (false !== stack && this.stack) {
+    props.stack = this.stack;
+  }
+
+  return props;
+};
+;
+return module.exports;
+},
+33: function (require, module, exports) {
+/*!
+ * Chai - getOwnEnumerablePropertySymbols utility
+ * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/**
+ * ### .getOwnEnumerablePropertySymbols(object)
+ *
+ * This allows the retrieval of directly-owned enumerable property symbols of an
+ * object. This function is necessary because Object.getOwnPropertySymbols
+ * returns both enumerable and non-enumerable property symbols.
+ *
+ * @param {Object} object
+ * @returns {Array}
+ * @namespace Utils
+ * @name getOwnEnumerablePropertySymbols
+ * @api public
+ */
+
+module.exports = function getOwnEnumerablePropertySymbols(obj) {
+  if (typeof Object.getOwnPropertySymbols !== 'function') return [];
+
+  return Object.getOwnPropertySymbols(obj).filter(function (sym) {
+    return Object.getOwnPropertyDescriptor(obj, sym).enumerable;
+  });
+};
+;
+return module.exports;
+},
+38: function (require, module, exports) {
+var config = require(9);
+
+/*!
+ * Chai - isProxyEnabled helper
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/**
+ * ### .isProxyEnabled()
+ *
+ * Helper function to check if Chai's proxy protection feature is enabled. If
+ * proxies are unsupported or disabled via the user's Chai config, then return
+ * false. Otherwise, return true.
+ *
+ * @namespace Utils
+ * @name isProxyEnabled
+ */
+
+module.exports = function isProxyEnabled() {
+  return config.useProxy && 
+    typeof Proxy !== 'undefined' &&
+    typeof Reflect !== 'undefined';
+};
+;
+return module.exports;
+},
+20: function (require, module, exports) {
+/*!
+ * Chai - getActual utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/**
+ * ### .getActual(object, [actual])
+ *
+ * Returns the `actual` value for an Assertion.
+ *
+ * @param {Object} object (constructed Assertion)
+ * @param {Arguments} chai.Assertion.prototype.assert arguments
+ * @namespace Utils
+ * @name getActual
+ */
+
+module.exports = function getActual(obj, args) {
+  return args.length > 4 ? args[4] : obj._obj;
+};
+;
+return module.exports;
+},
+37: function (require, module, exports) {
+var config = require(9);
+
+var fnLengthDesc = Object.getOwnPropertyDescriptor(function () {}, 'length');
+
+/*!
+ * Chai - addLengthGuard utility
+ * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/**
+ * ### .addLengthGuard(fn, assertionName, isChainable)
+ *
+ * Define `length` as a getter on the given uninvoked method assertion. The
+ * getter acts as a guard against chaining `length` directly off of an uninvoked
+ * method assertion, which is a problem because it references `function`'s
+ * built-in `length` property instead of Chai's `length` assertion. When the
+ * getter catches the user making this mistake, it throws an error with a
+ * helpful message.
+ *
+ * There are two ways in which this mistake can be made. The first way is by
+ * chaining the `length` assertion directly off of an uninvoked chainable
+ * method. In this case, Chai suggests that the user use `lengthOf` instead. The
+ * second way is by chaining the `length` assertion directly off of an uninvoked
+ * non-chainable method. Non-chainable methods must be invoked prior to
+ * chaining. In this case, Chai suggests that the user consult the docs for the
+ * given assertion.
+ *
+ * If the `length` property of functions is unconfigurable, then return `fn`
+ * without modification.
+ *
+ * Note that in ES6, the function's `length` property is configurable, so once
+ * support for legacy environments is dropped, Chai's `length` property can
+ * replace the built-in function's `length` property, and this length guard will
+ * no longer be necessary. In the mean time, maintaining consistency across all
+ * environments is the priority.
+ *
+ * @param {Function} fn
+ * @param {String} assertionName
+ * @param {Boolean} isChainable
+ * @namespace Utils
+ * @name addLengthGuard
+ */
+
+module.exports = function addLengthGuard (fn, assertionName, isChainable) {
+  if (!fnLengthDesc.configurable) return fn;
+
+  Object.defineProperty(fn, 'length', {
+    get: function () {
+      if (isChainable) {
+        throw Error('Invalid Chai property: ' + assertionName + '.length. Due' +
+          ' to a compatibility issue, "length" cannot directly follow "' +
+          assertionName + '". Use "' + assertionName + '.lengthOf" instead.');
+      }
+
+      throw Error('Invalid Chai property: ' + assertionName + '.length. See' +
+        ' docs for proper usage of "' + assertionName + '".');
+    }
+  });
+
+  return fn;
+};
+;
+return module.exports;
+},
 13: function (require, module, exports) {
 /*!
  * chai
@@ -11300,6 +11190,102 @@ module.exports = Number.isNaN || isNaN;
 ;
 return module.exports;
 },
+4: function (require, module, exports) {
+/*!
+ * chai
+ * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+var used = [];
+
+/*!
+ * Chai version
+ */
+
+exports.version = '4.1.1';
+
+/*!
+ * Assertion Error
+ */
+
+exports.AssertionError = require(7);
+
+/*!
+ * Utils for plugins (not exported)
+ */
+
+var util = require(8);
+
+/**
+ * # .use(function)
+ *
+ * Provides a way to extend the internals of Chai.
+ *
+ * @param {Function}
+ * @returns {this} for chaining
+ * @api public
+ */
+
+exports.use = function (fn) {
+  if (!~used.indexOf(fn)) {
+    fn(exports, util);
+    used.push(fn);
+  }
+
+  return exports;
+};
+
+/*!
+ * Utility Functions
+ */
+
+exports.util = util;
+
+/*!
+ * Configuration
+ */
+
+var config = require(9);
+exports.config = config;
+
+/*!
+ * Primary `Assertion` prototype
+ */
+
+var assertion = require(10);
+exports.use(assertion);
+
+/*!
+ * Core Assertions
+ */
+
+var core = require(11);
+exports.use(core);
+
+/*!
+ * Expect interface
+ */
+
+var expect = require(12);
+exports.use(expect);
+
+/*!
+ * Should interface
+ */
+
+var should = require(13);
+exports.use(should);
+
+/*!
+ * Assert interface
+ */
+
+var assert = require(14);
+exports.use(assert);
+;
+return module.exports;
+},
 23: function (require, module, exports) {
 /*!
  * Chai - flag utility
@@ -11575,6 +11561,36 @@ module.exports = function getMessage(obj, args) {
 
   return flagMsg ? flagMsg + ': ' + msg : msg;
 };
+;
+return module.exports;
+},
+3: function (require, module, exports) {
+exports.REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
+
+exports.REGEX_DIGITS = /\d+$/;
+
+exports.REGEX_SPACE = /\s/;
+
+exports.REGEX_KEBAB = /([A-Z])+/g;
+
+exports.POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
+
+exports.REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
+
+exports.QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
+
+exports.DIRECTIONS = ['top', 'bottom', 'left', 'right'];
+
+exports.QUAD_SHORTHANDS.forEach(function(property) {
+  var direction, i, len, ref;
+  exports.REQUIRES_UNIT_VALUE.push(property);
+  ref = exports.DIRECTIONS;
+  for (i = 0, len = ref.length; i < len; i++) {
+    direction = ref[i];
+    exports.REQUIRES_UNIT_VALUE.push(property + '-' + direction);
+  }
+});
+
 ;
 return module.exports;
 }

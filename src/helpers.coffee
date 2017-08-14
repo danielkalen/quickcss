@@ -1,10 +1,7 @@
+constants = import './constants'
 sampleStyle = document.createElement('div').style
-REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i
-REGEX_DIGITS = /\d+$/
-REGEX_SPACE = /\s/
-REGEX_KEBAB = /([A-Z])+/g
 
-helpers = {}
+helpers = exports
 
 helpers.includes = (target, item)->
 	target and target.indexOf(item) isnt -1
@@ -19,7 +16,7 @@ helpers.isPropSupported = (property)->
 	typeof sampleStyle[property] isnt 'undefined'
 
 helpers.toKebabCase = (string)->
-	string.replace REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
+	string.replace constants.REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
 
 helpers.normalizeProperty = (property)->	
 	property = helpers.toKebabCase(property)
@@ -31,17 +28,19 @@ helpers.normalizeProperty = (property)->
 
 helpers.getPrefix = (property, skipInitialCheck)->
 	if skipInitialCheck or not helpers.isPropSupported(property)
-		for prefix in POSSIBLE_PREFIXES
+		for prefix in constants.POSSIBLE_PREFIXES
 			### istanbul ignore next ###
 			return "-#{prefix}-" if helpers.isPropSupported("-#{prefix}-#{property}")
 	
 	return ''
 
 helpers.normalizeValue = (property, value)->
-	if helpers.includes(REQUIRES_UNIT_VALUE, property) and value isnt null
+	if helpers.includes(constants.REQUIRES_UNIT_VALUE, property) and value isnt null
 		value = ''+value
-		if REGEX_DIGITS.test(value) and not REGEX_LEN_VAL.test(value) and not REGEX_SPACE.test(value)
-			value += if property is 'line-height' then 'em' else 'px'
+		if  constants.REGEX_DIGITS.test(value) and
+			not constants.REGEX_LEN_VAL.test(value) and
+			not constants.REGEX_SPACE.test(value)
+				value += if property is 'line-height' then 'em' else 'px'
 
 	return value
 

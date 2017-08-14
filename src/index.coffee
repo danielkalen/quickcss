@@ -1,5 +1,5 @@
-import './constants'
-import './helpers'
+constants = import './constants'
+helpers = import './helpers'
 
 QuickCSS = (targetEl, property, value)->
 	if helpers.isIterable(targetEl)
@@ -36,6 +36,9 @@ QuickCSS.animation = (name, frames)-> if name and typeof name is 'string' and fr
 
 	generated = "@#{prefix}keyframes #{name} {#{generated}}"
 	helpers.inlineStyle(generated)
+
+
+
 
 
 

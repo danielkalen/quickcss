@@ -1,5 +1,15 @@
-POSSIBLE_PREFIXES = ['webkit','moz','ms','o']
-REQUIRES_UNIT_VALUE = [
+exports.REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i
+exports.REGEX_DIGITS = /\d+$/
+exports.REGEX_SPACE = /\s/
+exports.REGEX_KEBAB = /([A-Z])+/g
+
+exports.POSSIBLE_PREFIXES = [
+	'webkit'
+	'moz'
+	'ms'
+	'o'
+]
+exports.REQUIRES_UNIT_VALUE = [
 	'background-position-x'
 	'background-position-y'
 	'block-size'
@@ -36,16 +46,21 @@ REQUIRES_UNIT_VALUE = [
 	'y'
 ]
 
-QUAD_SHORTHANDS = [
+exports.QUAD_SHORTHANDS = [
 	'margin'
 	'padding'
 	'border'
 	'border-radius'
 ]
-directions = ['top','bottom','left','right']
+exports.DIRECTIONS = ['top','bottom','left','right']
 
-QUAD_SHORTHANDS.forEach (property)->
-	REQUIRES_UNIT_VALUE.push property
-	for direction in directions
-		REQUIRES_UNIT_VALUE.push property+'-'+direction
+exports.QUAD_SHORTHANDS.forEach (property)->
+	exports.REQUIRES_UNIT_VALUE.push property
+	for direction in exports.DIRECTIONS
+		exports.REQUIRES_UNIT_VALUE.push property+'-'+direction
 	return
+
+
+
+
+
