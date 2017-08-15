@@ -41,7 +41,11 @@ QuickCSS.register = (rule)-> if rule and typeof rule is 'object'
 	return className
 
 
-
+### istanbul ignore next ###
+QuickCSS.UNSET = switch
+	when helpers.isValueSupported('display','unset') then 'unset'
+	when helpers.isValueSupported('display','initial') then 'initial'
+	when helpers.isValueSupported('display','inherit') then 'inherit'
 
 QuickCSS.supports = helpers.isValueSupported
 QuickCSS.supportsProperty = helpers.isPropSupported
