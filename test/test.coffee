@@ -12,6 +12,7 @@ styles = divs.toArray().map (div)-> getComputedStyle(div)
 resetDivs = ()->
 	for div in divs
 		div.removeAttribute('style')
+		continue if arguments[0] is true
 		div.style.width = '40px'
 		div.style.height = '40px'
 		div.style.backgroundColor = 'blue'
@@ -150,6 +151,7 @@ suite "QuickCss", ()->
 		expect(divs[1].style.marginTop).to.equal ''
 		expect(styles[1].marginTop).to.equal '0px'
 
+
 	suite "animation", ()->
 		test ".animation(name, keyframes) will create a @keyframes rule", ()->
 			lastEl = $(document.head).children().last()[0]
@@ -210,6 +212,89 @@ suite "QuickCss", ()->
 			Css.animation 'someAnimation2', {'from':{width:50}, 'to':{width:100}}
 			expect(lastEl.innerHTML.match(/someAnimation/g)?.length).to.equal 3
 			expect(lastEl.innerHTML.match(/someAnimation2/g)?.length).to.equal 2
+
+
+
+	suite "style registration", ()->
+		setup ()-> resetDivs(true)
+
+		test "a className will be returned from QuickCss.register() for a given rule object which can be applied to elements", ()->
+			className = Css.register {width:'150px', 'margin-top':'25px'}
+
+			expect(typeof className).to.equal 'string'
+			expect(Css(divs[0], 'width')).not.to.equal '150px'
+			expect(Css(divs[0], 'marginTop')).not.to.equal '25px'
+
+			divs[0].className += " #{className}"
+			expect(Css(divs[0], 'width')).to.equal '150px'
+			expect(Css(divs[0], 'marginTop')).to.equal '25px'
+
+
+		test "values and properties will be normalized", ()->
+			className = Css.register {width:125, height:70, zIndex:12, marginTop:20, fontSize:20, position: 'relative'}
+
+			expect(Css(divs[0], 'width')).not.to.equal '125px'
+			expect(Css(divs[0], 'height')).not.to.equal '70px'
+			expect(Css(divs[0], 'marginTop')).not.to.equal '20px'
+			expect(Css(divs[0], 'fontSize')).not.to.equal '20px'
+			expect(Css(divs[0], 'zIndex')).not.to.equal '12'
+
+			divs[0].className += " #{className}"
+			expect(Css(divs[0], 'width')).to.equal '125px'
+			expect(Css(divs[0], 'height')).to.equal '70px'
+			expect(Css(divs[0], 'marginTop')).to.equal '20px'
+			expect(Css(divs[0], 'fontSize')).to.equal '20px'
+			expect(Css(divs[0], 'zIndex')).to.equal '12'
+
+
+		test "only valid property values will be registered", ()->
+			className = Css.register {width:20, height:{value:'20px'}, opacity:0.5, lineHeight:(->'2em'), fontSize:'12'}
+			inserted = (document.querySelector('#quickcss').innerHTML).match(new RegExp "\\.#{className} {(.+?)}")?[1]
+
+			expect(typeof inserted).to.equal 'string'
+			expect(inserted).to.include 'width:20px'
+			expect(inserted).to.include 'opacity:0.5'
+			expect(inserted).to.include 'font-size:12px'
+			expect(inserted).not.to.include 'height'
+			expect(inserted).not.to.include 'line-height'
+
+
+		test "a rule object will be only defined once inside the style element", ()->
+			className1 = Css.register {width:30, height:'50'}
+			className2 = Css.register {width:30, height:'50'}
+			expect(className1).to.equal(className2)
+			
+			match = (document.querySelector('#quickcss').innerHTML).match(new RegExp "#{className1}", 'g')
+			expect(match.length).to.equal 1
+
+
+		suite "the returned className will be the same (i.e. hashsum)", ()->
+			test "for the same object", ()->
+				rule = {width:125, height:70, zIndex:12}
+				expect(Css.register(rule)).to.equal(Css.register(rule))
+
+
+			test "for diff objects with the same config", ()->
+				expect(Css.register({width:125, height:70, zIndex:13}))
+				.to.equal(Css.register({width:125, height:70, zIndex:13}))
+
+
+			test "for diff objects with the same config but different notations", ()->
+				expect(Css.register({width:115, height:70, zIndex:14}))
+				.to.equal(Css.register({width:'115px', height:70, 'z-index':14}))
+
+
+			test "for diff objects with the same config but different property order", ()->
+				expect(Css.register({width:100, height:70, zIndex:15}))
+				.to.equal(Css.register({'z-index':15, width:'100px', height:70}))
+				
+				expect(Css.register({width:100, height:70, zIndex:15})).not
+				.to.equal(Css.register({'z-index':15, width:'100px', height:71}))
+
+			test "for diff object with the same config when some properties are rejected", ()->
+				expect(Css.register {width:20, height:{value:'20px'}, opacity:0.5, lineHeight:(->'2em'), fontSize:'12'})
+				.to.equal(Css.register {width:20, height:{value:'20px'}, opacity:0.5, fontSize:'12', lineHeight:(->'2em')})
+
 
 
 
