@@ -43,6 +43,8 @@ QuickCSS.register = (rule)-> if rule and typeof rule is 'object'
 
 
 
+QuickCSS.supports = helpers.isValueSupported
+QuickCSS.supportsProperty = helpers.isPropSupported
 QuickCSS.normalizeProperty = helpers.normalizeProperty
 QuickCSS.normalizeValue = helpers.normalizeValue
 QuickCSS.version = import '../package.json $ version'

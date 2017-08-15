@@ -12,11 +12,18 @@ helpers.isIterable = (target)->
 	typeof target.length is 'number' and
 	not target.nodeType
 
+helpers.toKebabCase = (string)->
+	string.replace constants.REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
+
 helpers.isPropSupported = (property)->
 	typeof sampleStyle[property] isnt 'undefined'
 
-helpers.toKebabCase = (string)->
-	string.replace constants.REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
+helpers.isValueSupported = (property, value)->
+	if window.CSS and window.CSS.supports
+		return window.CSS.supports(property, value)
+	else
+		sampleStyle[property] = value
+		return sampleStyle[property] is ''+value
 
 helpers.getPrefix = (property, skipInitialCheck)->
 	if skipInitialCheck or not helpers.isPropSupported(property)
