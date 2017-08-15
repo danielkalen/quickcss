@@ -7,43 +7,14 @@ exports: {}
 }, cache[r].exports = modules[r].call(cx, require, cache[r], cache[r].exports)));
 };
 })({}, {
-0: function (require, module, exports) {
-var QuickCSS;
+2: function (require, module, exports) {
+var constants, helpers, sampleStyle, styleContent, styleEl;
 
-var POSSIBLE_PREFIXES, QUAD_SHORTHANDS, REQUIRES_UNIT_VALUE, directions;
-
-POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
-
-REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
-
-QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
-
-directions = ['top', 'bottom', 'left', 'right'];
-
-QUAD_SHORTHANDS.forEach(function(property) {
-  var direction, i, len;
-  REQUIRES_UNIT_VALUE.push(property);
-  for (i = 0, len = directions.length; i < len; i++) {
-    direction = directions[i];
-    REQUIRES_UNIT_VALUE.push(property + '-' + direction);
-  }
-});
-
-;
-
-var REGEX_DIGITS, REGEX_KEBAB, REGEX_LEN_VAL, REGEX_SPACE, helpers, sampleStyle, styleContent, styleEl;
+constants = require(1);
 
 sampleStyle = document.createElement('div').style;
 
-REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
-
-REGEX_DIGITS = /\d+$/;
-
-REGEX_SPACE = /\s/;
-
-REGEX_KEBAB = /([A-Z])+/g;
-
-helpers = {};
+helpers = exports;
 
 helpers.includes = function(target, item) {
   return target && target.indexOf(item) !== -1;
@@ -58,9 +29,25 @@ helpers.isPropSupported = function(property) {
 };
 
 helpers.toKebabCase = function(string) {
-  return string.replace(REGEX_KEBAB, function(e, letter) {
+  return string.replace(constants.REGEX_KEBAB, function(e, letter) {
     return "-" + (letter.toLowerCase());
   });
+};
+
+helpers.getPrefix = function(property, skipInitialCheck) {
+  var j, len1, prefix, ref;
+  if (skipInitialCheck || !helpers.isPropSupported(property)) {
+    ref = constants.POSSIBLE_PREFIXES;
+    for (j = 0, len1 = ref.length; j < len1; j++) {
+      prefix = ref[j];
+
+      /* istanbul ignore next */
+      if (helpers.isPropSupported("-" + prefix + "-" + property)) {
+        return "-" + prefix + "-";
+      }
+    }
+  }
+  return '';
 };
 
 helpers.normalizeProperty = function(property) {
@@ -72,47 +59,91 @@ helpers.normalizeProperty = function(property) {
   }
 };
 
-helpers.getPrefix = function(property, skipInitialCheck) {
-  var i, len, prefix;
-  if (skipInitialCheck || !helpers.isPropSupported(property)) {
-    for (i = 0, len = POSSIBLE_PREFIXES.length; i < len; i++) {
-      prefix = POSSIBLE_PREFIXES[i];
-
-      /* istanbul ignore next */
-      if (helpers.isPropSupported("-" + prefix + "-" + property)) {
-        return "-" + prefix + "-";
-      }
-    }
-  }
-  return '';
-};
-
 helpers.normalizeValue = function(property, value) {
-  if (helpers.includes(REQUIRES_UNIT_VALUE, property) && value !== null) {
+  if (helpers.includes(constants.REQUIRES_UNIT_VALUE, property) && value !== null) {
     value = '' + value;
-    if (REGEX_DIGITS.test(value) && !REGEX_LEN_VAL.test(value) && !REGEX_SPACE.test(value)) {
+    if (constants.REGEX_DIGITS.test(value) && !constants.REGEX_LEN_VAL.test(value) && !constants.REGEX_SPACE.test(value)) {
       value += property === 'line-height' ? 'em' : 'px';
     }
   }
   return value;
 };
 
+helpers.sort = function(array) {
+  var great, i, len, less, pivot;
+  if (array.length < 2) {
+    return array;
+  } else {
+    pivot = array[0];
+    less = [];
+    great = [];
+    len = array.length;
+    i = 0;
+    while (++i !== len) {
+      if (array[i] <= pivot) {
+        less.push(array[i]);
+      } else {
+        great.push(array[i]);
+      }
+    }
+    return helpers.sort(less).concat(pivot, helpers.sort(great));
+  }
+};
+
+helpers.hash = function(string) {
+  var hash, i, length;
+  hash = 5381;
+  i = -1;
+  length = string.length;
+  while (++i !== string.length) {
+    hash = ((hash << 5) - hash) + string.charCodeAt(i);
+    hash |= 0;
+  }
+  return '_' + (hash < 0 ? hash * -2 : hash);
+};
+
+helpers.ruleToString = function(rule) {
+  var j, len1, output, prop, property, props, value;
+  output = '';
+  props = helpers.sort(Object.keys(rule));
+  for (j = 0, len1 = props.length; j < len1; j++) {
+    prop = props[j];
+    if (typeof rule[prop] === 'string' || typeof rule[prop] === 'number') {
+      property = helpers.normalizeProperty(prop);
+      value = helpers.normalizeValue(property, rule[prop]);
+      output += property + ":" + value + ";";
+    }
+  }
+  return output;
+};
+
 styleEl = null;
 
 styleContent = '';
 
-helpers.inlineStyle = function(rule) {
+helpers.inlineStyleCache = Object.create(null);
+
+helpers.inlineStyle = function(rule, valueToStore) {
   if (!styleEl) {
     styleEl = document.createElement('style');
     styleEl.id = 'quickcss';
     document.head.appendChild(styleEl);
   }
-  if (!helpers.includes(styleContent, rule)) {
-    return styleEl.innerHTML = styleContent += rule;
+  if (!helpers.inlineStyleCache[rule]) {
+    helpers.inlineStyleCache[rule] = valueToStore || true;
+    styleEl.innerHTML = styleContent += rule;
   }
 };
 
 ;
+return module.exports;
+},
+0: function (require, module, exports) {
+var QuickCSS, constants, helpers;
+
+constants = require(1);
+
+helpers = require(2);
 
 QuickCSS = function(targetEl, property, value) {
   var computedStyle, i, len, subEl, subProperty, subValue;
@@ -138,29 +169,69 @@ QuickCSS = function(targetEl, property, value) {
 };
 
 QuickCSS.animation = function(name, frames) {
-  var frame, generated, prefix, property, rules, value;
+  var frame, generated, prefix, rules;
   if (name && typeof name === 'string' && frames && typeof frames === 'object') {
     prefix = helpers.getPrefix('animation');
     generated = '';
     for (frame in frames) {
       rules = frames[frame];
-      generated += frame + " {";
-      for (property in rules) {
-        value = rules[property];
-        property = helpers.normalizeProperty(property);
-        value = helpers.normalizeValue(property, value);
-        generated += property + ": " + value + ";";
-      }
-      generated += "}";
+      generated += frame + " {" + (helpers.ruleToString(rules)) + "}";
     }
     generated = "@" + prefix + "keyframes " + name + " {" + generated + "}";
     return helpers.inlineStyle(generated);
   }
 };
 
-QuickCSS.version = "1.1.2";
+QuickCSS.register = function(rule) {
+  var className, style;
+  if (rule && typeof rule === 'object') {
+    rule = helpers.ruleToString(rule);
+    if (!(className = helpers.inlineStyleCache[rule])) {
+      className = helpers.hash(rule);
+      style = "." + className + " {" + rule + "}";
+      helpers.inlineStyle(style, className);
+    }
+    return className;
+  }
+};
+
+QuickCSS.normalizeProperty = helpers.normalizeProperty;
+
+QuickCSS.normalizeValue = helpers.normalizeValue;
+
+QuickCSS.version = "1.2.0";
 
 module.exports = QuickCSS;
+
+;
+return module.exports;
+},
+1: function (require, module, exports) {
+exports.REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
+
+exports.REGEX_DIGITS = /\d+$/;
+
+exports.REGEX_SPACE = /\s/;
+
+exports.REGEX_KEBAB = /([A-Z])+/g;
+
+exports.POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
+
+exports.REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
+
+exports.QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
+
+exports.DIRECTIONS = ['top', 'bottom', 'left', 'right'];
+
+exports.QUAD_SHORTHANDS.forEach(function(property) {
+  var direction, i, len, ref;
+  exports.REQUIRES_UNIT_VALUE.push(property);
+  ref = exports.DIRECTIONS;
+  for (i = 0, len = ref.length; i < len; i++) {
+    direction = ref[i];
+    exports.REQUIRES_UNIT_VALUE.push(property + '-' + direction);
+  }
+});
 
 ;
 return module.exports;
