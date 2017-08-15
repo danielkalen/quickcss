@@ -152,6 +152,21 @@ suite "QuickCss", ()->
 		expect(styles[1].marginTop).to.equal '0px'
 
 
+	test "QuickCss.supports & QuickCss.supportsProperty", ()->
+		expect(typeof Css.supports).to.equal 'function'
+		expect(typeof Css.supportsProperty).to.equal 'function'
+		expect(Css.supports('display','inline')).to.be.true
+		expect(Css.supports('display','block')).to.be.true
+		expect(Css.supports('display','blockl')).to.be.false
+		expect(Css.supports('display','')).to.be.false
+		expect(Css.supports('display',null)).to.be.false
+		expect(Css.supports('opacity','0.5')).to.be.true
+		expect(Css.supports('opacity',0.5)).to.be.true
+		expect(Css.supportsProperty('opacity')).to.be.true
+		expect(Css.supportsProperty('opacityy')).to.be.false
+
+
+
 	suite "animation", ()->
 		test ".animation(name, keyframes) will create a @keyframes rule", ()->
 			lastEl = $(document.head).children().last()[0]
