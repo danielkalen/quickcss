@@ -100,7 +100,7 @@ helpers.inlineStyle = (rule, valueToStore)->
 
 	unless helpers.inlineStyleCache[rule]
 		helpers.inlineStyleCache[rule] = valueToStore or true
-		styleEl.innerHTML = styleContent += rule
+		styleEl.textContent = styleContent += rule
 	return
 
 

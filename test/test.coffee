@@ -264,7 +264,7 @@ suite "QuickCss", ()->
 
 		test "only valid property values will be registered", ()->
 			className = Css.register {width:20, height:{value:'20px'}, opacity:0.5, lineHeight:(->'2em'), fontSize:'12'}
-			inserted = (document.querySelector('#quickcss').innerHTML).match(new RegExp "\\.#{className} {(.+?)}")?[1]
+			inserted = (document.querySelector('#quickcss').textContent).match(new RegExp "\\.#{className} {(.+?)}")?[1]
 
 			expect(typeof inserted).to.equal 'string'
 			expect(inserted).to.include 'width:20px'
@@ -279,7 +279,7 @@ suite "QuickCss", ()->
 			className2 = Css.register {width:30, height:'50'}
 			expect(className1).to.equal(className2)
 			
-			match = (document.querySelector('#quickcss').innerHTML).match(new RegExp "#{className1}", 'g')
+			match = (document.querySelector('#quickcss').textContent).match(new RegExp "#{className1}", 'g')
 			expect(match.length).to.equal 1
 
 
