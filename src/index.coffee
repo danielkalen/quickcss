@@ -25,22 +25,25 @@ QuickCSS.animation = (name, frames)-> if name and typeof name is 'string' and fr
 	generated = ''
 	
 	for frame,rules of frames
-		generated += "#{frame} {"
-
-		for property,value of rules
-			property = helpers.normalizeProperty(property)
-			value = helpers.normalizeValue(property,value)
-			generated += "#{property}: #{value};"
-		
-		generated += "}"
+		generated += "#{frame} {#{helpers.ruleToString(rules)}}"
 
 	generated = "@#{prefix}keyframes #{name} {#{generated}}"
 	helpers.inlineStyle(generated)
 
 
+QuickCSS.register = (rule)-> if rule and typeof rule is 'object'
+	rule = helpers.ruleToString(rule)
+	unless className = helpers.inlineStyleCache[rule]
+		className = helpers.hash(rule)
+		style = ".#{className} {#{rule}}"
+		helpers.inlineStyle(style, className)
+
+	return className
 
 
 
 
+QuickCSS.normalizeProperty = helpers.normalizeProperty
+QuickCSS.normalizeValue = helpers.normalizeValue
 QuickCSS.version = import '../package.json $ version'
 module.exports = QuickCSS
