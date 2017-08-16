@@ -19,6 +19,8 @@ replacements = [
 	[/toKebabCase/g, 'tC']
 	[/getPrefix/g, 'gP']
 	[/ruleToString/g, 'rS']
+	[/inlineStyleCache/g, 'iSC']
 	[/inlineStyle/g, 'iS']
+	[/clearInlineStyle/g, 'cI']
 	[/helpers/g, 'H']
 ]

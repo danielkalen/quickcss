@@ -41,6 +41,10 @@ QuickCSS.register = (rule)-> if rule and typeof rule is 'object'
 	return className
 
 
+QuickCSS.clearRegistered = ()->
+	helpers.clearInlineStyle()
+
+
 ### istanbul ignore next ###
 QuickCSS.UNSET = switch
 	when helpers.isValueSupported('display','unset') then 'unset'

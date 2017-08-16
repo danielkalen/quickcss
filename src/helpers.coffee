@@ -103,6 +103,11 @@ helpers.inlineStyle = (rule, valueToStore)->
 		styleEl.textContent = styleContent += rule
 	return
 
+helpers.clearInlineStyle = ()-> if styleContent
+	styleEl.textContent = styleContent = ''
+	keys = Object.keys(helpers.inlineStyleCache)
+	helpers.inlineStyleCache[key] = null for key in keys
+	return
 
 
 
