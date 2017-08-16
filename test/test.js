@@ -7,6 +7,426 @@ exports: {}
 }, cache[r].exports = modules[r].call(cx, require, cache[r], cache[r].exports)));
 };
 })({}, {
+0: function (require, module, exports) {
+var chai, divs, expect, i, resetDivs, styles;
+
+this.Css = window.quickcss;
+
+chai = require(1);
+
+chai.use(require(2));
+
+mocha.setup('tdd');
+
+mocha.slow(400);
+
+mocha.timeout(12000);
+
+if (!window.__karma__) {
+  mocha.bail();
+}
+
+expect = chai.expect;
+
+divs = $(((function() {
+  var j, results;
+  results = [];
+  for (i = j = 1; j <= 3; i = ++j) {
+    results.push('<div />');
+  }
+  return results;
+})()).join('')).appendTo('body');
+
+styles = divs.toArray().map(function(div) {
+  return getComputedStyle(div);
+});
+
+resetDivs = function() {
+  var div, j, len;
+  for (j = 0, len = divs.length; j < len; j++) {
+    div = divs[j];
+    div.removeAttribute('style');
+    if (arguments[0] === true) {
+      continue;
+    }
+    div.style.width = '40px';
+    div.style.height = '40px';
+    div.style.backgroundColor = 'blue';
+  }
+};
+
+suite("QuickCss", function() {
+  setup(resetDivs);
+  suiteTeardown(resetDivs);
+  test("Apply Basic Styles", function() {
+    Css(divs[0], 'width', '10px');
+    expect(styles[0].width).to.equal('10px');
+    Css(divs[1], 'width', '50vw');
+    expect(divs[1].style.width).to.equal('50vw');
+    return expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+  });
+  test("Suffix unit-less values for length properties", function() {
+    Css(divs[0], 'width', '10');
+    Css(divs[1], 'width', 10);
+    Css(divs[2], 'width', '10%');
+    expect(divs[0].style.width).to.equal('10px');
+    expect(divs[1].style.width).to.equal('10px');
+    expect(divs[2].style.width).to.equal('10%');
+    expect(styles[0].width).to.equal('10px');
+    expect(styles[1].width).to.equal('10px');
+    expect(Math.round(parseFloat(styles[2].width))).not.to.equal(40);
+    Css(divs[0], 'marginTop', '10');
+    Css(divs[1], 'marginTop', 10);
+    Css(divs[2], 'marginTop', '10%');
+    expect(divs[0].style.marginTop).to.equal('10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(divs[2].style.marginTop).to.equal('10%');
+    Css(divs[0], 'fontSize', '10');
+    Css(divs[1], 'fontSize', 10);
+    Css(divs[2], 'fontSize', '10%');
+    expect(divs[0].style.fontSize).to.equal('10px');
+    expect(divs[1].style.fontSize).to.equal('10px');
+    expect(divs[2].style.fontSize).to.equal('10%');
+    Css(divs[0], 'lineHeight', '10');
+    Css(divs[1], 'lineHeight', 10);
+    Css(divs[2], 'lineHeight', '10%');
+    expect(divs[0].style.lineHeight).to.equal('10em');
+    expect(divs[1].style.lineHeight).to.equal('10em');
+    return expect(divs[2].style.lineHeight).to.equal('10%');
+  });
+  test("Suffix won't be added for unit-less values on non-length properties", function() {
+    Css(divs[0], 'width', 'auto');
+    expect(divs[0].style.width).to.equal('auto');
+    expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
+    Css(divs[1], 'opacity', .5);
+    expect(divs[1].style.opacity).to.equal('0.5');
+    return expect(styles[1].opacity).to.equal('0.5');
+  });
+  test("An iterable collection of elements can be passed", function() {
+    Css(divs, 'width', 15);
+    expect(divs[0].style.width).to.equal('15px');
+    expect(divs[1].style.width).to.equal('15px');
+    return expect(divs[2].style.width).to.equal('15px');
+  });
+  test("A style object can be passed", function() {
+    Css(divs[0], {
+      'position': 'fixed',
+      'width': '55',
+      'height': 12,
+      'opacity': 0.8
+    });
+    expect(divs[0].style.position).to.equal('fixed');
+    expect(divs[0].style.width).to.equal('55px');
+    expect(divs[0].style.height).to.equal('12px');
+    return expect(divs[0].style.opacity).to.equal('0.8');
+  });
+  test("An iterable collection of elements can be passed along with a style object", function() {
+    Css(divs, {
+      width: '32px',
+      height: '99px'
+    });
+    expect(divs[0].style.width).to.equal('32px');
+    expect(divs[1].style.width).to.equal('32px');
+    expect(divs[2].style.width).to.equal('32px');
+    expect(divs[0].style.height).to.equal('99px');
+    expect(divs[1].style.height).to.equal('99px');
+    return expect(divs[2].style.height).to.equal('99px');
+  });
+  test("Kebab-cased/camel-cased properties will be normalized", function() {
+    Css(divs[0], 'margin-top', '10px');
+    expect(divs[0].style.marginTop).to.equal('10px');
+    expect(styles[0].marginTop).to.equal('10px');
+    Css(divs[0], 'marginBottom', '12px');
+    expect(divs[0].style.marginBottom).to.equal('12px');
+    return expect(styles[0].marginBottom).to.equal('12px');
+  });
+  test("Invalid properties will be ignored", function() {
+    Css(divs[1], 'topMargin', '25px');
+    expect(divs[0].style.topMargin).not.to.exist;
+    return expect(styles[0].topMargin).not.to.exist;
+  });
+  test("If a value is not provided, the current computed value for the selected property will be returned", function() {
+    var computedValue;
+    Css(divs[2], 'marginTop', '5vh');
+    computedValue = styles[2].marginTop;
+    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
+    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
+    expect(Css(divs[2], 'marginTop')).to.equal(styles[2].marginTop);
+    return expect(Css(divs[2], 'topMargin')).to.equal(void 0);
+  });
+  test("If a null value is provided for a property, the property will be deleted", function() {
+    Css(divs[1], 'marginTop', '10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(styles[1].marginTop).to.equal('10px');
+    Css(divs[1], 'marginTop', null);
+    expect(divs[1].style.marginTop).to.equal('');
+    expect(styles[1].marginTop).to.equal('0px');
+    Css(divs[1], 'marginTop', '10px');
+    expect(divs[1].style.marginTop).to.equal('10px');
+    expect(styles[1].marginTop).to.equal('10px');
+    Css(divs[1], {
+      'marginTop': null
+    });
+    expect(divs[1].style.marginTop).to.equal('');
+    return expect(styles[1].marginTop).to.equal('0px');
+  });
+  test("QuickCss.supports & QuickCss.supportsProperty", function() {
+    expect(typeof Css.supports).to.equal('function');
+    expect(typeof Css.supportsProperty).to.equal('function');
+    expect(Css.supports('display', 'inline')).to.be["true"];
+    expect(Css.supports('display', 'block')).to.be["true"];
+    expect(Css.supports('display', 'blockl')).to.be["false"];
+    expect(Css.supports('display', '')).to.be["false"];
+    expect(Css.supports('display', null)).to.be["false"];
+    expect(Css.supports('opacity', '0.5')).to.be["true"];
+    expect(Css.supports('opacity', 0.5)).to.be["true"];
+    expect(Css.supportsProperty('opacity')).to.be["true"];
+    return expect(Css.supportsProperty('opacityy')).to.be["false"];
+  });
+  suite("animation", function() {
+    test(".animation(name, keyframes) will create a @keyframes rule", function() {
+      var lastEl;
+      lastEl = $(document.head).children().last()[0];
+      expect(lastEl.id).not.to.equal('quickcss');
+      Css.animation('myAnimation', {
+        '0%': {
+          transform: 'rotate(0deg)',
+          opacity: 1,
+          width: 100,
+          marginTop: 5
+        },
+        '50%': {
+          width: 150
+        },
+        '100%': {
+          transform: 'rotate(360deg)',
+          opacity: 0.5,
+          width: 50
+        }
+      });
+      lastEl = $(document.head).children().last()[0];
+      expect(lastEl.id).to.equal('quickcss');
+      expect(lastEl.innerHTML).to.include('keyframes myAnimation {');
+      expect(lastEl.innerHTML).to.include('0% {');
+      expect(lastEl.innerHTML).to.include('transform:rotate(0deg)');
+      expect(lastEl.innerHTML).to.include('opacity:1');
+      expect(lastEl.innerHTML).to.include('width:100px');
+      expect(lastEl.innerHTML).to.include('margin-top:5px');
+      expect(lastEl.innerHTML).to.include('50% {');
+      expect(lastEl.innerHTML).to.include('width:150px');
+      expect(lastEl.innerHTML).to.include('100% {');
+      expect(lastEl.innerHTML).to.include('transform:rotate(360deg)');
+      expect(lastEl.innerHTML).to.include('opacity:0.5');
+      return expect(lastEl.innerHTML).to.include('width:50px');
+    });
+    return test("calling .animation() with the same args multiple times should only insert the keyframes once", function() {
+      var animation, lastEl, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7;
+      animation = {
+        '0%': {
+          transform: 'rotate(0deg)'
+        },
+        '100%': {
+          transform: 'rotate(360deg)'
+        }
+      };
+      Css.animation('someAnimation', animation);
+      lastEl = $(document.head).children().last()[0];
+      expect(lastEl.innerHTML).to.include('keyframes someAnimation {');
+      expect((ref = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref.length : void 0).to.equal(1);
+      Css.animation('someAnimation', animation);
+      expect((ref1 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref1.length : void 0).to.equal(1);
+      Css.animation('someAnimation2', animation);
+      expect((ref2 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref2.length : void 0).to.equal(2);
+      expect((ref3 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref3.length : void 0).to.equal(1);
+      Css.animation('someAnimation2', animation);
+      expect((ref4 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref4.length : void 0).to.equal(2);
+      expect((ref5 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref5.length : void 0).to.equal(1);
+      Css.animation('someAnimation2', {
+        'from': {
+          width: 50
+        },
+        'to': {
+          width: 100
+        }
+      });
+      expect((ref6 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref6.length : void 0).to.equal(3);
+      return expect((ref7 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref7.length : void 0).to.equal(2);
+    });
+  });
+  return suite("style registration", function() {
+    setup(function() {
+      return resetDivs(true);
+    });
+    test("a className will be returned from QuickCss.register() for a given rule object which can be applied to elements", function() {
+      var className;
+      className = Css.register({
+        width: '150px',
+        'margin-top': '25px'
+      });
+      expect(typeof className).to.equal('string');
+      expect(Css(divs[0], 'width')).not.to.equal('150px');
+      expect(Css(divs[0], 'marginTop')).not.to.equal('25px');
+      divs[0].className += " " + className;
+      expect(Css(divs[0], 'width')).to.equal('150px');
+      return expect(Css(divs[0], 'marginTop')).to.equal('25px');
+    });
+    test("values and properties will be normalized", function() {
+      var className;
+      className = Css.register({
+        width: 125,
+        height: 70,
+        zIndex: 12,
+        marginTop: 20,
+        fontSize: 20,
+        position: 'relative'
+      });
+      expect(Css(divs[0], 'width')).not.to.equal('125px');
+      expect(Css(divs[0], 'height')).not.to.equal('70px');
+      expect(Css(divs[0], 'marginTop')).not.to.equal('20px');
+      expect(Css(divs[0], 'fontSize')).not.to.equal('20px');
+      expect(Css(divs[0], 'zIndex')).not.to.equal('12');
+      divs[0].className += " " + className;
+      expect(Css(divs[0], 'width')).to.equal('125px');
+      expect(Css(divs[0], 'height')).to.equal('70px');
+      expect(Css(divs[0], 'marginTop')).to.equal('20px');
+      expect(Css(divs[0], 'fontSize')).to.equal('20px');
+      return expect(Css(divs[0], 'zIndex')).to.equal('12');
+    });
+    test("only valid property values will be registered", function() {
+      var className, inserted, ref;
+      className = Css.register({
+        width: 20,
+        height: {
+          value: '20px'
+        },
+        opacity: 0.5,
+        lineHeight: (function() {
+          return '2em';
+        }),
+        fontSize: '12'
+      });
+      inserted = (ref = (document.querySelector('#quickcss').textContent).match(new RegExp("\\." + className + " {(.+?)}"))) != null ? ref[1] : void 0;
+      expect(typeof inserted).to.equal('string');
+      expect(inserted).to.include('width:20px');
+      expect(inserted).to.include('opacity:0.5');
+      expect(inserted).to.include('font-size:12px');
+      expect(inserted).not.to.include('height');
+      return expect(inserted).not.to.include('line-height');
+    });
+    test("a rule object will be only defined once inside the style element", function() {
+      var className1, className2, match;
+      className1 = Css.register({
+        width: 30,
+        height: '50'
+      });
+      className2 = Css.register({
+        width: 30,
+        height: '50'
+      });
+      expect(className1).to.equal(className2);
+      match = (document.querySelector('#quickcss').textContent).match(new RegExp("" + className1, 'g'));
+      return expect(match.length).to.equal(1);
+    });
+    test("clearing registered", function() {
+      var className, styleEl;
+      styleEl = document.querySelector('#quickcss');
+      className = Css.register({
+        a: '1px',
+        b: '2px'
+      });
+      expect(styleEl.textContent).to.include(className);
+      Css.clearRegistered();
+      expect(styleEl.textContent).not.to.include(className);
+      Css.register({
+        a: '1px',
+        b: '2px'
+      });
+      return expect(styleEl.textContent).to.include(className);
+    });
+    return suite("the returned className will be the same (i.e. hashsum)", function() {
+      test("for the same object", function() {
+        var rule;
+        rule = {
+          width: 125,
+          height: 70,
+          zIndex: 12
+        };
+        return expect(Css.register(rule)).to.equal(Css.register(rule));
+      });
+      test("for diff objects with the same config", function() {
+        return expect(Css.register({
+          width: 125,
+          height: 70,
+          zIndex: 13
+        })).to.equal(Css.register({
+          width: 125,
+          height: 70,
+          zIndex: 13
+        }));
+      });
+      test("for diff objects with the same config but different notations", function() {
+        return expect(Css.register({
+          width: 115,
+          height: 70,
+          zIndex: 14
+        })).to.equal(Css.register({
+          width: '115px',
+          height: 70,
+          'z-index': 14
+        }));
+      });
+      test("for diff objects with the same config but different property order", function() {
+        expect(Css.register({
+          width: 100,
+          height: 70,
+          zIndex: 15
+        })).to.equal(Css.register({
+          'z-index': 15,
+          width: '100px',
+          height: 70
+        }));
+        return expect(Css.register({
+          width: 100,
+          height: 70,
+          zIndex: 15
+        })).not.to.equal(Css.register({
+          'z-index': 15,
+          width: '100px',
+          height: 71
+        }));
+      });
+      return test("for diff object with the same config when some properties are rejected", function() {
+        return expect(Css.register({
+          width: 20,
+          height: {
+            value: '20px'
+          },
+          opacity: 0.5,
+          lineHeight: (function() {
+            return '2em';
+          }),
+          fontSize: '12'
+        })).to.equal(Css.register({
+          width: 20,
+          height: {
+            value: '20px'
+          },
+          opacity: 0.5,
+          fontSize: '12',
+          lineHeight: (function() {
+            return '2em';
+          })
+        }));
+      });
+    });
+  });
+});
+
+require(3);
+
+;
+return module.exports;
+},
 15: function (require, module, exports) {
 'use strict';
 /* !
@@ -9931,410 +10351,6 @@ exports.isProxyEnabled = require(38);
  */
 
 exports.isNaN = require(39);
-;
-return module.exports;
-},
-0: function (require, module, exports) {
-var chai, divs, expect, i, resetDivs, styles;
-
-this.Css = window.quickcss;
-
-chai = require(1);
-
-chai.use(require(2));
-
-mocha.setup('tdd');
-
-mocha.slow(400);
-
-mocha.timeout(12000);
-
-if (!window.__karma__) {
-  mocha.bail();
-}
-
-expect = chai.expect;
-
-divs = $(((function() {
-  var j, results;
-  results = [];
-  for (i = j = 1; j <= 3; i = ++j) {
-    results.push('<div />');
-  }
-  return results;
-})()).join('')).appendTo('body');
-
-styles = divs.toArray().map(function(div) {
-  return getComputedStyle(div);
-});
-
-resetDivs = function() {
-  var div, j, len;
-  for (j = 0, len = divs.length; j < len; j++) {
-    div = divs[j];
-    div.removeAttribute('style');
-    if (arguments[0] === true) {
-      continue;
-    }
-    div.style.width = '40px';
-    div.style.height = '40px';
-    div.style.backgroundColor = 'blue';
-  }
-};
-
-suite("QuickCss", function() {
-  setup(resetDivs);
-  suiteTeardown(resetDivs);
-  test("Apply Basic Styles", function() {
-    Css(divs[0], 'width', '10px');
-    expect(styles[0].width).to.equal('10px');
-    Css(divs[1], 'width', '50vw');
-    expect(divs[1].style.width).to.equal('50vw');
-    return expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
-  });
-  test("Suffix unit-less values for length properties", function() {
-    Css(divs[0], 'width', '10');
-    Css(divs[1], 'width', 10);
-    Css(divs[2], 'width', '10%');
-    expect(divs[0].style.width).to.equal('10px');
-    expect(divs[1].style.width).to.equal('10px');
-    expect(divs[2].style.width).to.equal('10%');
-    expect(styles[0].width).to.equal('10px');
-    expect(styles[1].width).to.equal('10px');
-    expect(Math.round(parseFloat(styles[2].width))).not.to.equal(40);
-    Css(divs[0], 'marginTop', '10');
-    Css(divs[1], 'marginTop', 10);
-    Css(divs[2], 'marginTop', '10%');
-    expect(divs[0].style.marginTop).to.equal('10px');
-    expect(divs[1].style.marginTop).to.equal('10px');
-    expect(divs[2].style.marginTop).to.equal('10%');
-    Css(divs[0], 'fontSize', '10');
-    Css(divs[1], 'fontSize', 10);
-    Css(divs[2], 'fontSize', '10%');
-    expect(divs[0].style.fontSize).to.equal('10px');
-    expect(divs[1].style.fontSize).to.equal('10px');
-    expect(divs[2].style.fontSize).to.equal('10%');
-    Css(divs[0], 'lineHeight', '10');
-    Css(divs[1], 'lineHeight', 10);
-    Css(divs[2], 'lineHeight', '10%');
-    expect(divs[0].style.lineHeight).to.equal('10em');
-    expect(divs[1].style.lineHeight).to.equal('10em');
-    return expect(divs[2].style.lineHeight).to.equal('10%');
-  });
-  test("Suffix won't be added for unit-less values on non-length properties", function() {
-    Css(divs[0], 'width', 'auto');
-    expect(divs[0].style.width).to.equal('auto');
-    expect(Math.round(parseFloat(styles[0].width))).not.to.equal(40);
-    Css(divs[1], 'opacity', .5);
-    expect(divs[1].style.opacity).to.equal('0.5');
-    return expect(styles[1].opacity).to.equal('0.5');
-  });
-  test("An iterable collection of elements can be passed", function() {
-    Css(divs, 'width', 15);
-    expect(divs[0].style.width).to.equal('15px');
-    expect(divs[1].style.width).to.equal('15px');
-    return expect(divs[2].style.width).to.equal('15px');
-  });
-  test("A style object can be passed", function() {
-    Css(divs[0], {
-      'position': 'fixed',
-      'width': '55',
-      'height': 12,
-      'opacity': 0.8
-    });
-    expect(divs[0].style.position).to.equal('fixed');
-    expect(divs[0].style.width).to.equal('55px');
-    expect(divs[0].style.height).to.equal('12px');
-    return expect(divs[0].style.opacity).to.equal('0.8');
-  });
-  test("An iterable collection of elements can be passed along with a style object", function() {
-    Css(divs, {
-      width: '32px',
-      height: '99px'
-    });
-    expect(divs[0].style.width).to.equal('32px');
-    expect(divs[1].style.width).to.equal('32px');
-    expect(divs[2].style.width).to.equal('32px');
-    expect(divs[0].style.height).to.equal('99px');
-    expect(divs[1].style.height).to.equal('99px');
-    return expect(divs[2].style.height).to.equal('99px');
-  });
-  test("Kebab-cased/camel-cased properties will be normalized", function() {
-    Css(divs[0], 'margin-top', '10px');
-    expect(divs[0].style.marginTop).to.equal('10px');
-    expect(styles[0].marginTop).to.equal('10px');
-    Css(divs[0], 'marginBottom', '12px');
-    expect(divs[0].style.marginBottom).to.equal('12px');
-    return expect(styles[0].marginBottom).to.equal('12px');
-  });
-  test("Invalid properties will be ignored", function() {
-    Css(divs[1], 'topMargin', '25px');
-    expect(divs[0].style.topMargin).not.to.exist;
-    return expect(styles[0].topMargin).not.to.exist;
-  });
-  test("If a value is not provided, the current computed value for the selected property will be returned", function() {
-    var computedValue;
-    Css(divs[2], 'marginTop', '5vh');
-    computedValue = styles[2].marginTop;
-    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
-    expect(Css(divs[2], 'marginTop', '5vh')).to.equal(void 0);
-    expect(Css(divs[2], 'marginTop')).to.equal(styles[2].marginTop);
-    return expect(Css(divs[2], 'topMargin')).to.equal(void 0);
-  });
-  test("If a null value is provided for a property, the property will be deleted", function() {
-    Css(divs[1], 'marginTop', '10px');
-    expect(divs[1].style.marginTop).to.equal('10px');
-    expect(styles[1].marginTop).to.equal('10px');
-    Css(divs[1], 'marginTop', null);
-    expect(divs[1].style.marginTop).to.equal('');
-    expect(styles[1].marginTop).to.equal('0px');
-    Css(divs[1], 'marginTop', '10px');
-    expect(divs[1].style.marginTop).to.equal('10px');
-    expect(styles[1].marginTop).to.equal('10px');
-    Css(divs[1], {
-      'marginTop': null
-    });
-    expect(divs[1].style.marginTop).to.equal('');
-    return expect(styles[1].marginTop).to.equal('0px');
-  });
-  test("QuickCss.supports & QuickCss.supportsProperty", function() {
-    expect(typeof Css.supports).to.equal('function');
-    expect(typeof Css.supportsProperty).to.equal('function');
-    expect(Css.supports('display', 'inline')).to.be["true"];
-    expect(Css.supports('display', 'block')).to.be["true"];
-    expect(Css.supports('display', 'blockl')).to.be["false"];
-    expect(Css.supports('display', '')).to.be["false"];
-    expect(Css.supports('display', null)).to.be["false"];
-    expect(Css.supports('opacity', '0.5')).to.be["true"];
-    expect(Css.supports('opacity', 0.5)).to.be["true"];
-    expect(Css.supportsProperty('opacity')).to.be["true"];
-    return expect(Css.supportsProperty('opacityy')).to.be["false"];
-  });
-  suite("animation", function() {
-    test(".animation(name, keyframes) will create a @keyframes rule", function() {
-      var lastEl;
-      lastEl = $(document.head).children().last()[0];
-      expect(lastEl.id).not.to.equal('quickcss');
-      Css.animation('myAnimation', {
-        '0%': {
-          transform: 'rotate(0deg)',
-          opacity: 1,
-          width: 100,
-          marginTop: 5
-        },
-        '50%': {
-          width: 150
-        },
-        '100%': {
-          transform: 'rotate(360deg)',
-          opacity: 0.5,
-          width: 50
-        }
-      });
-      lastEl = $(document.head).children().last()[0];
-      expect(lastEl.id).to.equal('quickcss');
-      expect(lastEl.innerHTML).to.include('keyframes myAnimation {');
-      expect(lastEl.innerHTML).to.include('0% {');
-      expect(lastEl.innerHTML).to.include('transform:rotate(0deg)');
-      expect(lastEl.innerHTML).to.include('opacity:1');
-      expect(lastEl.innerHTML).to.include('width:100px');
-      expect(lastEl.innerHTML).to.include('margin-top:5px');
-      expect(lastEl.innerHTML).to.include('50% {');
-      expect(lastEl.innerHTML).to.include('width:150px');
-      expect(lastEl.innerHTML).to.include('100% {');
-      expect(lastEl.innerHTML).to.include('transform:rotate(360deg)');
-      expect(lastEl.innerHTML).to.include('opacity:0.5');
-      return expect(lastEl.innerHTML).to.include('width:50px');
-    });
-    return test("calling .animation() with the same args multiple times should only insert the keyframes once", function() {
-      var animation, lastEl, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7;
-      animation = {
-        '0%': {
-          transform: 'rotate(0deg)'
-        },
-        '100%': {
-          transform: 'rotate(360deg)'
-        }
-      };
-      Css.animation('someAnimation', animation);
-      lastEl = $(document.head).children().last()[0];
-      expect(lastEl.innerHTML).to.include('keyframes someAnimation {');
-      expect((ref = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref.length : void 0).to.equal(1);
-      Css.animation('someAnimation', animation);
-      expect((ref1 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref1.length : void 0).to.equal(1);
-      Css.animation('someAnimation2', animation);
-      expect((ref2 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref2.length : void 0).to.equal(2);
-      expect((ref3 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref3.length : void 0).to.equal(1);
-      Css.animation('someAnimation2', animation);
-      expect((ref4 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref4.length : void 0).to.equal(2);
-      expect((ref5 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref5.length : void 0).to.equal(1);
-      Css.animation('someAnimation2', {
-        'from': {
-          width: 50
-        },
-        'to': {
-          width: 100
-        }
-      });
-      expect((ref6 = lastEl.innerHTML.match(/someAnimation/g)) != null ? ref6.length : void 0).to.equal(3);
-      return expect((ref7 = lastEl.innerHTML.match(/someAnimation2/g)) != null ? ref7.length : void 0).to.equal(2);
-    });
-  });
-  return suite("style registration", function() {
-    setup(function() {
-      return resetDivs(true);
-    });
-    test("a className will be returned from QuickCss.register() for a given rule object which can be applied to elements", function() {
-      var className;
-      className = Css.register({
-        width: '150px',
-        'margin-top': '25px'
-      });
-      expect(typeof className).to.equal('string');
-      expect(Css(divs[0], 'width')).not.to.equal('150px');
-      expect(Css(divs[0], 'marginTop')).not.to.equal('25px');
-      divs[0].className += " " + className;
-      expect(Css(divs[0], 'width')).to.equal('150px');
-      return expect(Css(divs[0], 'marginTop')).to.equal('25px');
-    });
-    test("values and properties will be normalized", function() {
-      var className;
-      className = Css.register({
-        width: 125,
-        height: 70,
-        zIndex: 12,
-        marginTop: 20,
-        fontSize: 20,
-        position: 'relative'
-      });
-      expect(Css(divs[0], 'width')).not.to.equal('125px');
-      expect(Css(divs[0], 'height')).not.to.equal('70px');
-      expect(Css(divs[0], 'marginTop')).not.to.equal('20px');
-      expect(Css(divs[0], 'fontSize')).not.to.equal('20px');
-      expect(Css(divs[0], 'zIndex')).not.to.equal('12');
-      divs[0].className += " " + className;
-      expect(Css(divs[0], 'width')).to.equal('125px');
-      expect(Css(divs[0], 'height')).to.equal('70px');
-      expect(Css(divs[0], 'marginTop')).to.equal('20px');
-      expect(Css(divs[0], 'fontSize')).to.equal('20px');
-      return expect(Css(divs[0], 'zIndex')).to.equal('12');
-    });
-    test("only valid property values will be registered", function() {
-      var className, inserted, ref;
-      className = Css.register({
-        width: 20,
-        height: {
-          value: '20px'
-        },
-        opacity: 0.5,
-        lineHeight: (function() {
-          return '2em';
-        }),
-        fontSize: '12'
-      });
-      inserted = (ref = (document.querySelector('#quickcss').textContent).match(new RegExp("\\." + className + " {(.+?)}"))) != null ? ref[1] : void 0;
-      expect(typeof inserted).to.equal('string');
-      expect(inserted).to.include('width:20px');
-      expect(inserted).to.include('opacity:0.5');
-      expect(inserted).to.include('font-size:12px');
-      expect(inserted).not.to.include('height');
-      return expect(inserted).not.to.include('line-height');
-    });
-    test("a rule object will be only defined once inside the style element", function() {
-      var className1, className2, match;
-      className1 = Css.register({
-        width: 30,
-        height: '50'
-      });
-      className2 = Css.register({
-        width: 30,
-        height: '50'
-      });
-      expect(className1).to.equal(className2);
-      match = (document.querySelector('#quickcss').textContent).match(new RegExp("" + className1, 'g'));
-      return expect(match.length).to.equal(1);
-    });
-    return suite("the returned className will be the same (i.e. hashsum)", function() {
-      test("for the same object", function() {
-        var rule;
-        rule = {
-          width: 125,
-          height: 70,
-          zIndex: 12
-        };
-        return expect(Css.register(rule)).to.equal(Css.register(rule));
-      });
-      test("for diff objects with the same config", function() {
-        return expect(Css.register({
-          width: 125,
-          height: 70,
-          zIndex: 13
-        })).to.equal(Css.register({
-          width: 125,
-          height: 70,
-          zIndex: 13
-        }));
-      });
-      test("for diff objects with the same config but different notations", function() {
-        return expect(Css.register({
-          width: 115,
-          height: 70,
-          zIndex: 14
-        })).to.equal(Css.register({
-          width: '115px',
-          height: 70,
-          'z-index': 14
-        }));
-      });
-      test("for diff objects with the same config but different property order", function() {
-        expect(Css.register({
-          width: 100,
-          height: 70,
-          zIndex: 15
-        })).to.equal(Css.register({
-          'z-index': 15,
-          width: '100px',
-          height: 70
-        }));
-        return expect(Css.register({
-          width: 100,
-          height: 70,
-          zIndex: 15
-        })).not.to.equal(Css.register({
-          'z-index': 15,
-          width: '100px',
-          height: 71
-        }));
-      });
-      return test("for diff object with the same config when some properties are rejected", function() {
-        return expect(Css.register({
-          width: 20,
-          height: {
-            value: '20px'
-          },
-          opacity: 0.5,
-          lineHeight: (function() {
-            return '2em';
-          }),
-          fontSize: '12'
-        })).to.equal(Css.register({
-          width: 20,
-          height: {
-            value: '20px'
-          },
-          opacity: 0.5,
-          fontSize: '12',
-          lineHeight: (function() {
-            return '2em';
-          })
-        }));
-      });
-    });
-  });
-});
-
-require(3);
-
 ;
 return module.exports;
 },

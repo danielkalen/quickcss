@@ -283,6 +283,18 @@ suite "QuickCss", ()->
 			expect(match.length).to.equal 1
 
 
+		test "clearing registered", ()->
+			styleEl = document.querySelector('#quickcss')
+			className = Css.register {a:'1px', b:'2px'}
+			expect(styleEl.textContent).to.include(className)
+			
+			Css.clearRegistered()
+			expect(styleEl.textContent).not.to.include(className)
+			
+			Css.register {a:'1px', b:'2px'}
+			expect(styleEl.textContent).to.include(className)
+
+
 		suite "the returned className will be the same (i.e. hashsum)", ()->
 			test "for the same object", ()->
 				rule = {width:125, height:70, zIndex:12}
