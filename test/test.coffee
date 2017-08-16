@@ -283,16 +283,64 @@ suite "QuickCss", ()->
 			expect(match.length).to.equal 1
 
 
+		test "styles can be registered at different levels for specificity (default=0)", ()->
+			className1 = Css.register {width:10, height:10}
+			className2 = Css.register {width:20, height:20}
+
+			divs[0].className = "#{className1}"
+			expect(styles[0].width).to.equal('10px')
+			expect(styles[0].height).to.equal('10px')
+			
+			divs[0].className += " #{className2}"
+			expect(styles[0].width).to.equal('20px')
+			expect(styles[0].height).to.equal('20px')
+			
+			Css.register {width:10, height:10}
+			expect(styles[0].width).to.equal('20px')
+			expect(styles[0].height).to.equal('20px')
+			expect(document.querySelector('#quickcss1')).to.equal null
+			
+			Css.register {width:10, height:10}, 1
+			expect(styles[0].width).to.equal('10px')
+			expect(styles[0].height).to.equal('10px')
+			
+			Css.register {width:20, height:20}, 5
+			expect(styles[0].width).to.equal('20px')
+			expect(styles[0].height).to.equal('20px')
+
+			expect(document.querySelector('#quickcss1')).not.to.equal null
+			expect(document.querySelector('#quickcss5')).not.to.equal null
+			expect(document.querySelector('#quickcss').textContent).to.include(className1)
+			expect(document.querySelector('#quickcss1').textContent).to.include(className1)
+			expect(document.querySelector('#quickcss5').textContent).not.to.include(className1)
+			expect(document.querySelector('#quickcss').textContent).to.include(className2)
+			expect(document.querySelector('#quickcss1').textContent).not.to.include(className2)
+			expect(document.querySelector('#quickcss5').textContent).to.include(className2)
+
+			Css.register {width:10, height:10}, 5
+			expect(styles[0].width).to.equal('10px')
+			expect(styles[0].height).to.equal('10px')
+			expect(document.querySelector('#quickcss5').textContent).to.include(className1)
+
+
+		
 		test "clearing registered", ()->
-			styleEl = document.querySelector('#quickcss')
 			className = Css.register {a:'1px', b:'2px'}
-			expect(styleEl.textContent).to.include(className)
+			Css.register {a:'1px', b:'2px'}, 1
+			expect(document.querySelector('#quickcss').textContent).to.include(className)
+			expect(document.querySelector('#quickcss1').textContent).to.include(className)
 			
 			Css.clearRegistered()
-			expect(styleEl.textContent).not.to.include(className)
+			expect(document.querySelector('#quickcss').textContent).not.to.include(className)
+			expect(document.querySelector('#quickcss1').textContent).to.include(className)
 			
 			Css.register {a:'1px', b:'2px'}
-			expect(styleEl.textContent).to.include(className)
+			expect(document.querySelector('#quickcss').textContent).to.include(className)
+			expect(document.querySelector('#quickcss1').textContent).to.include(className)
+			
+			Css.clearRegistered(1)
+			expect(document.querySelector('#quickcss').textContent).to.include(className)
+			expect(document.querySelector('#quickcss1').textContent).not.to.include(className)
 
 
 		suite "the returned className will be the same (i.e. hashsum)", ()->

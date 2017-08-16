@@ -89,24 +89,26 @@ helpers.ruleToString = (rule)->
 	
 	return output
 
-styleEl = null
-styleContent = ''
-helpers.inlineStyleCache = Object.create(null)
-helpers.inlineStyle = (rule, valueToStore)->
-	if not styleEl
+helpers.inlineStyleConfig = styleConfig = Object.create(null)
+helpers.inlineStyle = (rule, valueToStore, level)->
+	if not config=styleConfig[level]
 		styleEl = document.createElement('style')
-		styleEl.id = 'quickcss'
+		styleEl.id = "quickcss#{level or ''}"
 		document.head.appendChild(styleEl)
-
-	unless helpers.inlineStyleCache[rule]
-		helpers.inlineStyleCache[rule] = valueToStore or true
-		styleEl.textContent = styleContent += rule
+		styleConfig[level] = config = el:styleEl, content:'', cache:Object.create(null)
+	
+	unless config.cache[rule]
+		config.cache[rule] = valueToStore or true
+		config.el.textContent = config.content += rule
+	
 	return
 
-helpers.clearInlineStyle = ()-> if styleContent
-	styleEl.textContent = styleContent = ''
-	keys = Object.keys(helpers.inlineStyleCache)
-	helpers.inlineStyleCache[key] = null for key in keys
+
+helpers.clearInlineStyle = (level)-> if config = styleConfig[level]
+	return if not config.content
+	config.el.textContent = config.content = ''
+	keys = Object.keys(config.cache)
+	config.cache[key] = null for key in keys
 	return
 
 

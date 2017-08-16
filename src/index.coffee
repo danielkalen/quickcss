@@ -28,21 +28,23 @@ QuickCSS.animation = (name, frames)-> if name and typeof name is 'string' and fr
 		generated += "#{frame} {#{helpers.ruleToString(rules)}}"
 
 	generated = "@#{prefix}keyframes #{name} {#{generated}}"
-	helpers.inlineStyle(generated)
+	helpers.inlineStyle(generated, true, 0)
 
 
-QuickCSS.register = (rule)-> if rule and typeof rule is 'object'
+QuickCSS.register = (rule, level)-> if rule and typeof rule is 'object'
+	level ||= 0
 	rule = helpers.ruleToString(rule)
-	unless className = helpers.inlineStyleCache[rule]
+	
+	unless className = helpers.inlineStyleConfig[level]?[rule]
 		className = helpers.hash(rule)
 		style = ".#{className} {#{rule}}"
-		helpers.inlineStyle(style, className)
+		helpers.inlineStyle(style, className, level)
 
 	return className
 
 
-QuickCSS.clearRegistered = ()->
-	helpers.clearInlineStyle()
+QuickCSS.clearRegistered = (level)->
+	helpers.clearInlineStyle(level or 0)
 
 
 ### istanbul ignore next ###
