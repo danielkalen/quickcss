@@ -7,92 +7,6 @@ exports: {}
 }, cache[r].exports = modules[r].call(cx, require, cache[r], cache[r].exports)));
 };
 })({}, {
-0: function (require, module, exports) {
-var QuickCSS, constants, helpers;
-
-constants = require(1);
-
-helpers = require(2);
-
-QuickCSS = function(targetEl, property, value) {
-  var computedStyle, i, len, subEl, subProperty, subValue;
-  if (helpers.isIterable(targetEl)) {
-    for (i = 0, len = targetEl.length; i < len; i++) {
-      subEl = targetEl[i];
-      QuickCSS(subEl, property, value);
-    }
-  } else if (typeof property === 'object') {
-    for (subProperty in property) {
-      subValue = property[subProperty];
-      QuickCSS(targetEl, subProperty, subValue);
-    }
-  } else {
-    property = helpers.normalizeProperty(property);
-    if (typeof value === 'undefined') {
-      computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
-      return computedStyle[property];
-    } else if (property) {
-      targetEl.style[property] = helpers.normalizeValue(property, value);
-    }
-  }
-};
-
-QuickCSS.animation = function(name, frames) {
-  var frame, generated, prefix, rules;
-  if (name && typeof name === 'string' && frames && typeof frames === 'object') {
-    prefix = helpers.getPrefix('animation');
-    generated = '';
-    for (frame in frames) {
-      rules = frames[frame];
-      generated += frame + " {" + (helpers.ruleToString(rules)) + "}";
-    }
-    generated = "@" + prefix + "keyframes " + name + " {" + generated + "}";
-    return helpers.inlineStyle(generated);
-  }
-};
-
-QuickCSS.register = function(rule) {
-  var className, style;
-  if (rule && typeof rule === 'object') {
-    rule = helpers.ruleToString(rule);
-    if (!(className = helpers.inlineStyleCache[rule])) {
-      className = helpers.hash(rule);
-      style = "." + className + " {" + rule + "}";
-      helpers.inlineStyle(style, className);
-    }
-    return className;
-  }
-};
-
-
-/* istanbul ignore next */
-
-QuickCSS.UNSET = (function() {
-  switch (false) {
-    case !helpers.isValueSupported('display', 'unset'):
-      return 'unset';
-    case !helpers.isValueSupported('display', 'initial'):
-      return 'initial';
-    case !helpers.isValueSupported('display', 'inherit'):
-      return 'inherit';
-  }
-})();
-
-QuickCSS.supports = helpers.isValueSupported;
-
-QuickCSS.supportsProperty = helpers.isPropSupported;
-
-QuickCSS.normalizeProperty = helpers.normalizeProperty;
-
-QuickCSS.normalizeValue = helpers.normalizeValue;
-
-QuickCSS.version = "1.3.0";
-
-module.exports = QuickCSS;
-
-;
-return module.exports;
-},
 2: function (require, module, exports) {
 var constants, helpers, sampleStyle, styleContent, styleEl;
 
@@ -229,6 +143,108 @@ helpers.inlineStyle = function(rule, valueToStore) {
     styleEl.textContent = styleContent += rule;
   }
 };
+
+helpers.clearInlineStyle = function() {
+  var j, key, keys, len1;
+  if (styleContent) {
+    styleEl.textContent = styleContent = '';
+    keys = Object.keys(helpers.inlineStyleCache);
+    for (j = 0, len1 = keys.length; j < len1; j++) {
+      key = keys[j];
+      helpers.inlineStyleCache[key] = null;
+    }
+  }
+};
+
+;
+return module.exports;
+},
+0: function (require, module, exports) {
+var QuickCSS, constants, helpers;
+
+constants = require(1);
+
+helpers = require(2);
+
+QuickCSS = function(targetEl, property, value) {
+  var computedStyle, i, len, subEl, subProperty, subValue;
+  if (helpers.isIterable(targetEl)) {
+    for (i = 0, len = targetEl.length; i < len; i++) {
+      subEl = targetEl[i];
+      QuickCSS(subEl, property, value);
+    }
+  } else if (typeof property === 'object') {
+    for (subProperty in property) {
+      subValue = property[subProperty];
+      QuickCSS(targetEl, subProperty, subValue);
+    }
+  } else {
+    property = helpers.normalizeProperty(property);
+    if (typeof value === 'undefined') {
+      computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
+      return computedStyle[property];
+    } else if (property) {
+      targetEl.style[property] = helpers.normalizeValue(property, value);
+    }
+  }
+};
+
+QuickCSS.animation = function(name, frames) {
+  var frame, generated, prefix, rules;
+  if (name && typeof name === 'string' && frames && typeof frames === 'object') {
+    prefix = helpers.getPrefix('animation');
+    generated = '';
+    for (frame in frames) {
+      rules = frames[frame];
+      generated += frame + " {" + (helpers.ruleToString(rules)) + "}";
+    }
+    generated = "@" + prefix + "keyframes " + name + " {" + generated + "}";
+    return helpers.inlineStyle(generated);
+  }
+};
+
+QuickCSS.register = function(rule) {
+  var className, style;
+  if (rule && typeof rule === 'object') {
+    rule = helpers.ruleToString(rule);
+    if (!(className = helpers.inlineStyleCache[rule])) {
+      className = helpers.hash(rule);
+      style = "." + className + " {" + rule + "}";
+      helpers.inlineStyle(style, className);
+    }
+    return className;
+  }
+};
+
+QuickCSS.clearRegistered = function() {
+  return helpers.clearInlineStyle();
+};
+
+
+/* istanbul ignore next */
+
+QuickCSS.UNSET = (function() {
+  switch (false) {
+    case !helpers.isValueSupported('display', 'unset'):
+      return 'unset';
+    case !helpers.isValueSupported('display', 'initial'):
+      return 'initial';
+    case !helpers.isValueSupported('display', 'inherit'):
+      return 'inherit';
+  }
+})();
+
+QuickCSS.supports = helpers.isValueSupported;
+
+QuickCSS.supportsProperty = helpers.isPropSupported;
+
+QuickCSS.normalizeProperty = helpers.normalizeProperty;
+
+QuickCSS.normalizeValue = helpers.normalizeValue;
+
+QuickCSS.version = "1.3.1";
+
+module.exports = QuickCSS;
 
 ;
 return module.exports;
