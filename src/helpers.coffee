@@ -92,25 +92,47 @@ helpers.ruleToString = (rule)->
 helpers.inlineStyleConfig = styleConfig = Object.create(null)
 helpers.inlineStyle = (rule, valueToStore, level)->
 	if not config=styleConfig[level]
-		styleEl = document.createElement('style')
-		styleEl.id = "quickcss#{level or ''}"
-		document.head.appendChild(styleEl)
-		styleConfig[level] = config = el:styleEl, content:'', cache:Object.create(null)
+		styleConfig[level] = config = new StyleConfig(level)
 	
-	unless config.cache[rule]
-		config.cache[rule] = valueToStore or true
-		config.el.textContent = config.content += rule
-	
+	config.add(rule, valueToStore)	
 	return
 
 
-helpers.clearInlineStyle = (level)-> if config = styleConfig[level]
-	return if not config.content
-	config.el.textContent = config.content = ''
-	keys = Object.keys(config.cache)
-	config.cache[key] = null for key in keys
-	return
+helpers.clearInlineStyle = (level)->
+	config.clear() if config = styleConfig[level]
 
+
+class StyleConfig
+	constructor: (level)->
+		@content = ''
+		@animationFrame = 0
+		@cache = Object.create(null)
+		@pendingWrite = false
+		@el = document.createElement('style')
+		@el.id = "quickcss#{level or ''}"
+		document.head.appendChild(@el)
+
+	add: (rule, valueToStore)-> unless @cache[rule]
+		@cache[rule] = valueToStore or true
+		@content += rule
+		@defer()
+
+
+	defer: ()->
+		if @animationFrame
+			window.cancelAnimationFrame(@animationFrame)
+
+		@pendingWrite = true
+		@animationFrame = window.requestAnimationFrame ()=>
+			@el.textContent = @content if @pendingWrite
+			@pendingWrite = false
+
+
+	clear: ()-> if @content
+		@el.textContent = @content = ''
+		keys = Object.keys(@cache)
+		@cache[key] = null for key in keys
+		return
 
 
 
