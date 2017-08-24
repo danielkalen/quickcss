@@ -323,7 +323,6 @@ suite "QuickCss", ()->
 			expect(document.querySelector('#quickcss5').textContent).to.include(className1)
 
 
-		
 		test "clearing registered", ()->
 			className = Css.register {a:'1px', b:'2px'}
 			Css.register {a:'1px', b:'2px'}, 1

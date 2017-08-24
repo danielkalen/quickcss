@@ -68,9 +68,11 @@ task 'watch:test', (options)->
 
 task 'install', ()->
 	Promise.resolve()
+		.then ()-> invoke 'install:build'
+		.then ()-> invoke 'install:watch'
 		.then ()-> invoke 'install:test'
 		.then ()-> invoke 'install:coverage'
-		.then ()-> invoke 'install:bench'
+		.then ()-> invoke 'install:measure'
 
 
 task 'install:build', ()->
