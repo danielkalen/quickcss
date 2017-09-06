@@ -77,7 +77,7 @@ helpers.hash = (string)->
 	return '_'+(if hash < 0 then hash * -2 else hash)
 
 
-helpers.ruleToString = (rule)->
+helpers.ruleToString = (rule, important)->
 	output = ''
 	props = helpers.sort(Object.keys(rule))
 	
@@ -85,6 +85,7 @@ helpers.ruleToString = (rule)->
 		if typeof rule[prop] is 'string' or typeof rule[prop] is 'number'
 			property = helpers.normalizeProperty(prop)
 			value = helpers.normalizeValue(property, rule[prop])
+			value += " !important" if important
 			output += "#{property}:#{value};"
 	
 	return output

@@ -31,9 +31,9 @@ QuickCSS.animation = (name, frames)-> if name and typeof name is 'string' and fr
 	helpers.inlineStyle(generated, true, 0)
 
 
-QuickCSS.register = (rule, level)-> if rule and typeof rule is 'object'
+QuickCSS.register = (rule, level, important)-> if rule and typeof rule is 'object'
 	level ||= 0
-	rule = helpers.ruleToString(rule)
+	rule = helpers.ruleToString(rule, important)
 	
 	unless className = helpers.inlineStyleConfig[level]?[rule]
 		className = helpers.hash(rule)
