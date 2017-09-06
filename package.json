@@ -1,6 +1,6 @@
 {
   "name": "quickcss",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Fast & light wrapper for getting/setting CSS rules",
   "main": "dist/quickcss.js",
   "browser": {
