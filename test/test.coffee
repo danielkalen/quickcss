@@ -323,6 +323,23 @@ suite "QuickCss", ()->
 			expect(document.querySelector('#quickcss5').textContent).to.include(className1)
 
 
+		test "styles will be registered with '!important' flag when passed QuickCss.register(..., ..., true)", ()->
+			className1 = Css.register {width:30, height:30}, 0
+			className2 = Css.register {width:30, height:30}, 0, true
+			className4 = Css.register {width:50}, 1, true
+			className5 = Css.register {height:50}, 1
+			className3 = Css.register {width:25, height:25}, 2
+
+			expect(className1).not.to.equal(className2)
+			
+			divs[0].className = "#{className3} #{className4} #{className5}"
+			expect(styles[0].width).to.equal('50px')
+			expect(styles[0].height).to.equal('25px')
+
+			inserted = (document.querySelector('#quickcss').textContent).match(new RegExp "\\.#{className2} {(.+?)}")?[1]
+			expect(inserted).to.include '!important'
+
+
 		test "clearing registered", ()->
 			className = Css.register {a:'1px', b:'2px'}
 			Css.register {a:'1px', b:'2px'}, 1
