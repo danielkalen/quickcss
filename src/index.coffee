@@ -1,7 +1,7 @@
 constants = import './constants'
 helpers = import './helpers'
 
-QuickCSS = (targetEl, property, value)->
+QuickCSS = (targetEl, property, value, important)->
 	if helpers.isIterable(targetEl)
 		QuickCSS(subEl, property, value) for subEl in targetEl
 	
@@ -15,7 +15,7 @@ QuickCSS = (targetEl, property, value)->
 			return computedStyle[property]
 		
 		else if property
-			targetEl.style[property] = helpers.normalizeValue(property, value)
+			targetEl.style.setProperty(property, helpers.normalizeValue(property, value), constants.IMPORTANT if important)
 
 	return
 

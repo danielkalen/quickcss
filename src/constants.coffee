@@ -2,6 +2,7 @@ exports.REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i
 exports.REGEX_DIGITS = /\d+$/
 exports.REGEX_SPACE = /\s/
 exports.REGEX_KEBAB = /([A-Z])+/g
+exports.IMPORTANT = 'important'
 
 exports.POSSIBLE_PREFIXES = [
 	'webkit'
