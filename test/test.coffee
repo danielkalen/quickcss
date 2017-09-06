@@ -152,6 +152,24 @@ suite "QuickCss", ()->
 		expect(styles[1].marginTop).to.equal '0px'
 
 
+	test "!important flag will be set when truthy value will be passed as the 4th argument to QuickCss", ()->
+		resetDivs(true)
+		expect(divs[0].getAttribute 'style').to.equal ''
+
+		Css(divs[0], 'width', '50px')
+		expect(divs[0].getAttribute 'style').to.include '50px'
+		expect(divs[0].getAttribute 'style').not.to.include '50px !important'
+		
+		Css(divs[0], 'width', '50px', true)
+		expect(divs[0].getAttribute 'style').to.include '50px !important'
+		
+		Css(divs[0], 'height', '75px', true)
+		expect(divs[0].getAttribute 'style').to.include '75px !important'
+		
+		Css(divs[0], 'height', '75px')
+		expect(divs[0].getAttribute 'style').not.to.include '75px !important'
+
+
 	test "QuickCss.supports & QuickCss.supportsProperty", ()->
 		expect(typeof Css.supports).to.equal 'function'
 		expect(typeof Css.supportsProperty).to.equal 'function'
