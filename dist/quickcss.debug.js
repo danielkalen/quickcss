@@ -51,11 +51,11 @@ QuickCSS.animation = function(name, frames) {
   }
 };
 
-QuickCSS.register = function(rule, level) {
+QuickCSS.register = function(rule, level, important) {
   var className, ref, style;
   if (rule && typeof rule === 'object') {
     level || (level = 0);
-    rule = helpers.ruleToString(rule);
+    rule = helpers.ruleToString(rule, important);
     if (!(className = (ref = helpers.inlineStyleConfig[level]) != null ? ref[rule] : void 0)) {
       className = helpers.hash(rule);
       style = "." + className + " {" + rule + "}";
@@ -91,7 +91,7 @@ QuickCSS.normalizeProperty = helpers.normalizeProperty;
 
 QuickCSS.normalizeValue = helpers.normalizeValue;
 
-QuickCSS.version = "1.3.2";
+QuickCSS.version = "1.3.3";
 
 module.exports = QuickCSS;
 
@@ -202,7 +202,7 @@ helpers.hash = function(string) {
   return '_' + (hash < 0 ? hash * -2 : hash);
 };
 
-helpers.ruleToString = function(rule) {
+helpers.ruleToString = function(rule, important) {
   var j, len1, output, prop, property, props, value;
   output = '';
   props = helpers.sort(Object.keys(rule));
@@ -211,6 +211,9 @@ helpers.ruleToString = function(rule) {
     if (typeof rule[prop] === 'string' || typeof rule[prop] === 'number') {
       property = helpers.normalizeProperty(prop);
       value = helpers.normalizeValue(property, rule[prop]);
+      if (important) {
+        value += " !important";
+      }
       output += property + ":" + value + ";";
     }
   }
