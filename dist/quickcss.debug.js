@@ -7,93 +7,34 @@ exports: {}
 }, cache[r].exports = modules[r].call(cx, require, cache[r], cache[r].exports)));
 };
 })({}, {
-0: function (require, module, exports) {
-var QuickCSS, constants, helpers;
+1: function (require, module, exports) {
+exports.REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
 
-constants = require(1);
+exports.REGEX_DIGITS = /\d+$/;
 
-helpers = require(2);
+exports.REGEX_SPACE = /\s/;
 
-QuickCSS = function(targetEl, property, value) {
-  var computedStyle, i, len, subEl, subProperty, subValue;
-  if (helpers.isIterable(targetEl)) {
-    for (i = 0, len = targetEl.length; i < len; i++) {
-      subEl = targetEl[i];
-      QuickCSS(subEl, property, value);
-    }
-  } else if (typeof property === 'object') {
-    for (subProperty in property) {
-      subValue = property[subProperty];
-      QuickCSS(targetEl, subProperty, subValue);
-    }
-  } else {
-    property = helpers.normalizeProperty(property);
-    if (typeof value === 'undefined') {
-      computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
-      return computedStyle[property];
-    } else if (property) {
-      targetEl.style[property] = helpers.normalizeValue(property, value);
-    }
+exports.REGEX_KEBAB = /([A-Z])+/g;
+
+exports.IMPORTANT = 'important';
+
+exports.POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
+
+exports.REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
+
+exports.QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
+
+exports.DIRECTIONS = ['top', 'bottom', 'left', 'right'];
+
+exports.QUAD_SHORTHANDS.forEach(function(property) {
+  var direction, i, len, ref;
+  exports.REQUIRES_UNIT_VALUE.push(property);
+  ref = exports.DIRECTIONS;
+  for (i = 0, len = ref.length; i < len; i++) {
+    direction = ref[i];
+    exports.REQUIRES_UNIT_VALUE.push(property + '-' + direction);
   }
-};
-
-QuickCSS.animation = function(name, frames) {
-  var frame, generated, prefix, rules;
-  if (name && typeof name === 'string' && frames && typeof frames === 'object') {
-    prefix = helpers.getPrefix('animation');
-    generated = '';
-    for (frame in frames) {
-      rules = frames[frame];
-      generated += frame + " {" + (helpers.ruleToString(rules)) + "}";
-    }
-    generated = "@" + prefix + "keyframes " + name + " {" + generated + "}";
-    return helpers.inlineStyle(generated, true, 0);
-  }
-};
-
-QuickCSS.register = function(rule, level, important) {
-  var className, ref, style;
-  if (rule && typeof rule === 'object') {
-    level || (level = 0);
-    rule = helpers.ruleToString(rule, important);
-    if (!(className = (ref = helpers.inlineStyleConfig[level]) != null ? ref[rule] : void 0)) {
-      className = helpers.hash(rule);
-      style = "." + className + " {" + rule + "}";
-      helpers.inlineStyle(style, className, level);
-    }
-    return className;
-  }
-};
-
-QuickCSS.clearRegistered = function(level) {
-  return helpers.clearInlineStyle(level || 0);
-};
-
-
-/* istanbul ignore next */
-
-QuickCSS.UNSET = (function() {
-  switch (false) {
-    case !helpers.isValueSupported('display', 'unset'):
-      return 'unset';
-    case !helpers.isValueSupported('display', 'initial'):
-      return 'initial';
-    case !helpers.isValueSupported('display', 'inherit'):
-      return 'inherit';
-  }
-})();
-
-QuickCSS.supports = helpers.isValueSupported;
-
-QuickCSS.supportsProperty = helpers.isPropSupported;
-
-QuickCSS.normalizeProperty = helpers.normalizeProperty;
-
-QuickCSS.normalizeValue = helpers.normalizeValue;
-
-QuickCSS.version = "1.3.3";
-
-module.exports = QuickCSS;
+});
 
 ;
 return module.exports;
@@ -258,32 +199,93 @@ helpers.clearInlineStyle = function(level) {
 ;
 return module.exports;
 },
-1: function (require, module, exports) {
-exports.REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
+0: function (require, module, exports) {
+var QuickCSS, constants, helpers;
 
-exports.REGEX_DIGITS = /\d+$/;
+constants = require(1);
 
-exports.REGEX_SPACE = /\s/;
+helpers = require(2);
 
-exports.REGEX_KEBAB = /([A-Z])+/g;
-
-exports.POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
-
-exports.REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
-
-exports.QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
-
-exports.DIRECTIONS = ['top', 'bottom', 'left', 'right'];
-
-exports.QUAD_SHORTHANDS.forEach(function(property) {
-  var direction, i, len, ref;
-  exports.REQUIRES_UNIT_VALUE.push(property);
-  ref = exports.DIRECTIONS;
-  for (i = 0, len = ref.length; i < len; i++) {
-    direction = ref[i];
-    exports.REQUIRES_UNIT_VALUE.push(property + '-' + direction);
+QuickCSS = function(targetEl, property, value, important) {
+  var computedStyle, i, len, subEl, subProperty, subValue;
+  if (helpers.isIterable(targetEl)) {
+    for (i = 0, len = targetEl.length; i < len; i++) {
+      subEl = targetEl[i];
+      QuickCSS(subEl, property, value);
+    }
+  } else if (typeof property === 'object') {
+    for (subProperty in property) {
+      subValue = property[subProperty];
+      QuickCSS(targetEl, subProperty, subValue);
+    }
+  } else {
+    property = helpers.normalizeProperty(property);
+    if (typeof value === 'undefined') {
+      computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
+      return computedStyle[property];
+    } else if (property) {
+      targetEl.style.setProperty(property, helpers.normalizeValue(property, value), important ? constants.IMPORTANT : void 0);
+    }
   }
-});
+};
+
+QuickCSS.animation = function(name, frames) {
+  var frame, generated, prefix, rules;
+  if (name && typeof name === 'string' && frames && typeof frames === 'object') {
+    prefix = helpers.getPrefix('animation');
+    generated = '';
+    for (frame in frames) {
+      rules = frames[frame];
+      generated += frame + " {" + (helpers.ruleToString(rules)) + "}";
+    }
+    generated = "@" + prefix + "keyframes " + name + " {" + generated + "}";
+    return helpers.inlineStyle(generated, true, 0);
+  }
+};
+
+QuickCSS.register = function(rule, level, important) {
+  var className, ref, style;
+  if (rule && typeof rule === 'object') {
+    level || (level = 0);
+    rule = helpers.ruleToString(rule, important);
+    if (!(className = (ref = helpers.inlineStyleConfig[level]) != null ? ref[rule] : void 0)) {
+      className = helpers.hash(rule);
+      style = "." + className + " {" + rule + "}";
+      helpers.inlineStyle(style, className, level);
+    }
+    return className;
+  }
+};
+
+QuickCSS.clearRegistered = function(level) {
+  return helpers.clearInlineStyle(level || 0);
+};
+
+
+/* istanbul ignore next */
+
+QuickCSS.UNSET = (function() {
+  switch (false) {
+    case !helpers.isValueSupported('display', 'unset'):
+      return 'unset';
+    case !helpers.isValueSupported('display', 'initial'):
+      return 'initial';
+    case !helpers.isValueSupported('display', 'inherit'):
+      return 'inherit';
+  }
+})();
+
+QuickCSS.supports = helpers.isValueSupported;
+
+QuickCSS.supportsProperty = helpers.isPropSupported;
+
+QuickCSS.normalizeProperty = helpers.normalizeProperty;
+
+QuickCSS.normalizeValue = helpers.normalizeValue;
+
+QuickCSS.version = "1.3.4";
+
+module.exports = QuickCSS;
 
 ;
 return module.exports;
