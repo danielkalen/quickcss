@@ -1,6 +1,6 @@
 {
   "name": "quickcss",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "description": "⚡️-fast tiny CSS management tool sprinkled with API sugar",
   "main": "dist/quickcss.js",
   "browser": {
