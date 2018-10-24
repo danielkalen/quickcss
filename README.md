@@ -7,6 +7,17 @@
 
 ⚡️-fast tiny CSS management tool sprinkled with API sugar
 
+**Features**
+- fetch *computed* style values of elements.
+- apply styles with either kebab-case or camel-case property names.
+- automatic value conversion (`width:10 === '10px'`)
+- automatic browser prefixing
+- global style registration
+- animation registration
+- check CSS browser support with `.supports()` and `.supportsProperty()`
+- simple `!important` flag application
+- global style levels (i.e. overriding styles)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
@@ -27,16 +38,6 @@
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-**Features**
-- fetch *computed* style values of elements.
-- apply styles with either kebab-case or camel-case property names.
-- automatic value conversion (`width:10 === '10px'`)
-- automatic browser prefixing
-- global style registration
-- animation registration
-- check CSS browser support with `.supports()` and `.supportsProperty()`
-- simple `!important` flag application
-- global style levels (i.e. overriding styles)
 
 ## Usage
 ```javascript
