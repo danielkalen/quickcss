@@ -1,7 +1,7 @@
 {
   "name": "quickcss",
   "version": "1.3.4",
-  "description": "Fast & light wrapper for getting/setting CSS rules",
+  "description": "⚡️-fast tiny CSS management tool sprinkled with API sugar",
   "main": "dist/quickcss.js",
   "browser": {
     "./debug": "dist/quickcss.debug.js",
@@ -22,6 +22,10 @@
   "directories": {
     "test": "test"
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "postversion": "npm run build && git add . && git commit -a -m '[Build]'",
     "prepublishOnly": "npm run test:travis",
@@ -61,7 +65,7 @@
     "fs-jetpack": "^0.13.3",
     "promise-break": "^0.1.1",
     "semver": "^5.3.0",
-    "simplyimport": "^4.0.0-s27",
-    "simplywatch": "^3.0.0-l2"
+    "simplyimport": "^4.0.5",
+    "simplywatch": "^3.0.0"
   }
 }
