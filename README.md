@@ -7,6 +7,26 @@
 
 ⚡️-fast tiny CSS management tool sprinkled with API sugar
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Usage](#usage)
+- [API](#api)
+  - [`quickcss(element, property)`](#quickcsselement-property)
+  - [`quickcss(element[], property, value[, important])`](#quickcsselement-property-value-important)
+  - [`quickcss(element[], properties)`](#quickcsselement-properties)
+  - [`quickcss.animation(name, frames)`](#quickcssanimationname-frames)
+  - [`quickcss.register(rule[, level, important])`](#quickcssregisterrule-level-important)
+  - [`quickcss.clearRegisered([level])`](#quickcssclearregiseredlevel)
+  - [`quickcss.supports(property, value)`](#quickcsssupportsproperty-value)
+  - [`quickcss.supportsProperty(property)`](#quickcsssupportspropertyproperty)
+  - [`quickcss.normalizeProperty(property)`](#quickcssnormalizepropertyproperty)
+  - [`quickcss.normalizeValue(property, value)`](#quickcssnormalizevalueproperty-value)
+- [Value normalization](#value-normalization)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 **Features**
 - fetch *computed* style values of elements.
 - apply styles with either kebab-case or camel-case property names.
