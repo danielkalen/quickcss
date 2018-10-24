@@ -3,7 +3,7 @@
 [![Coverage](.config/badges/coverage.png?raw=true)](https://github.com/danielkalen/quickcss)
 [![Code Climate](https://codeclimate.com/github/danielkalen/quickcss/badges/gpa.svg)](https://codeclimate.com/github/danielkalen/quickcss)
 [![NPM](https://img.shields.io/npm/v/quickcss.svg)](https://npmjs.com/package/quickcss)
-[![Sauce Test Status](https://saucelabs.com/browser-matrix/quickcss.svg)](https://saucelabs.com/u/quickcss)
+<!---[![Sauce Test Status](https://saucelabs.com/browser-matrix/quickcss.svg)](https://saucelabs.com/u/quickcss)--->
 
 ⚡️-fast tiny CSS management tool sprinkled with API sugar
 
@@ -79,8 +79,8 @@ Formats and applies `value` for the given `property` on `element`.
 - **value**: value that will be applied to `property`. For some properties, values will be [normalized and translated](#value_normalization) to provide API sugar.
 - **important**: optional boolean to control the addition of `!important` flag.
 
-### `quickcss(element[], propertiesObject)`
-Iterates over `propertiesObject`, using the key as the `property` and applies its value to the `element`.
+### `quickcss(element[], properties)`
+Iterates over `properties`, using the key as the `property` and applies its value to the `element`.
 
 - **element**: DOM element object or an array of elements.
 - **properties**: A `{property:value}` pair object.
