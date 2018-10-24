@@ -1,58 +1,56 @@
-constants = import './constants'
-sampleStyle = document.createElement('div').style
+import {IMPORTANT, REGEX_KEBAB, REGEX_SPACE, REGEX_DIGITS, REGEX_LEN_VAL, POSSIBLE_PREFIXES, REQUIRES_UNIT_VALUE} from './constants'
+SAMPLE_STYLE = document.createElement('div').style
 
-helpers = exports
-
-helpers.includes = (target, item)->
+export includes = (target, item)->
 	target and target.indexOf(item) isnt -1
 
-helpers.isIterable = (target)->
+export isIterable = (target)->
 	target and
 	typeof target is 'object' and
 	typeof target.length is 'number' and
 	not target.nodeType
 
-helpers.toKebabCase = (string)->
-	string.replace constants.REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
+export toKebabCase = (string)->
+	string.replace REGEX_KEBAB, (e,letter)-> "-#{letter.toLowerCase()}"
 
-helpers.isPropSupported = (property)->
-	typeof sampleStyle[property] isnt 'undefined'
+export isPropSupported = (property)->
+	typeof SAMPLE_STYLE[property] isnt 'undefined'
 
-helpers.isValueSupported = (property, value)->
+export isValueSupported = (property, value)->
 	if window.CSS and window.CSS.supports
 		return window.CSS.supports(property, value)
 	else
-		sampleStyle[property] = value
-		return sampleStyle[property] is ''+value
+		SAMPLE_STYLE[property] = value
+		return SAMPLE_STYLE[property] is ''+value
 
-helpers.getPrefix = (property, skipInitialCheck)->
-	if skipInitialCheck or not helpers.isPropSupported(property)
-		for prefix in constants.POSSIBLE_PREFIXES
+export getPrefix = (property, skipInitialCheck)->
+	if skipInitialCheck or not isPropSupported(property)
+		for prefix in POSSIBLE_PREFIXES
 			### istanbul ignore next ###
-			return "-#{prefix}-" if helpers.isPropSupported("-#{prefix}-#{property}")
+			return "-#{prefix}-" if isPropSupported("-#{prefix}-#{property}")
 	
 	return ''
 
-helpers.normalizeProperty = (property)->	
-	property = helpers.toKebabCase(property)
+export normalizeProperty = (property)->	
+	property = toKebabCase(property)
 	
-	if helpers.isPropSupported(property)
+	if isPropSupported(property)
 		return property
 	else
-		return "#{helpers.getPrefix(property,true)}#{property}"
+		return "#{getPrefix(property,true)}#{property}"
 
-helpers.normalizeValue = (property, value)->
-	if helpers.includes(constants.REQUIRES_UNIT_VALUE, property) and value isnt null
+export normalizeValue = (property, value)->
+	if includes(REQUIRES_UNIT_VALUE, property) and value isnt null
 		value = ''+value
-		if  constants.REGEX_DIGITS.test(value) and
-			not constants.REGEX_LEN_VAL.test(value) and
-			not constants.REGEX_SPACE.test(value)
+		if  REGEX_DIGITS.test(value) and
+			not REGEX_LEN_VAL.test(value) and
+			not REGEX_SPACE.test(value)
 				value += if property is 'line-height' then 'em' else 'px'
 
 	return value
 
 
-helpers.sort = (array)->
+export sort = (array)->
 	if array.length < 2
 		return array
 	else
@@ -64,34 +62,34 @@ helpers.sort = (array)->
 			else
 				great.push(array[i])
 
-		return helpers.sort(less).concat(pivot, helpers.sort(great))
+		return sort(less).concat(pivot, sort(great))
 
 
-helpers.hash = (string)->
-	hash = 5381; i = -1; length = string.length
+export hash = (string)->
+	hsh = 5381; i = -1; length = string.length
 	
 	while ++i isnt string.length
-		hash = ((hash << 5) - hash) + string.charCodeAt(i)
-		hash |= 0
+		hsh = ((hsh << 5) - hsh) + string.charCodeAt(i)
+		hsh |= 0
 
-	return '_'+(if hash < 0 then hash * -2 else hash)
+	return '_'+(if hsh < 0 then hsh * -2 else hsh)
 
 
-helpers.ruleToString = (rule, important)->
+export ruleToString = (rule, important)->
 	output = ''
-	props = helpers.sort(Object.keys(rule))
+	props = sort(Object.keys(rule))
 	
 	for prop in props
 		if typeof rule[prop] is 'string' or typeof rule[prop] is 'number'
-			property = helpers.normalizeProperty(prop)
-			value = helpers.normalizeValue(property, rule[prop])
+			property = normalizeProperty(prop)
+			value = normalizeValue(property, rule[prop])
 			value += " !important" if important
 			output += "#{property}:#{value};"
 	
 	return output
 
-helpers.inlineStyleConfig = styleConfig = Object.create(null)
-helpers.inlineStyle = (rule, valueToStore, level)->
+export inlineStyleConfig = styleConfig = Object.create(null)
+export inlineStyle = (rule, valueToStore, level)->
 	if not config=styleConfig[level]
 		styleEl = document.createElement('style')
 		styleEl.id = "quickcss#{level or ''}"
@@ -105,7 +103,7 @@ helpers.inlineStyle = (rule, valueToStore, level)->
 	return
 
 
-helpers.clearInlineStyle = (level)-> if config = styleConfig[level]
+export clearInlineStyle = (level)-> if config = styleConfig[level]
 	return if not config.content
 	config.el.textContent = config.content = ''
 	keys = Object.keys(config.cache)
