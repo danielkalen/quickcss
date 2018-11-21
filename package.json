@@ -1,6 +1,6 @@
 {
   "name": "quickcss",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "⚡️-fast tiny CSS management tool sprinkled with API sugar",
   "main": "dist/quickcss.js",
   "browser": {
@@ -17,7 +17,9 @@
       [
         "babelify",
         {
-          "presets": ["@babel/preset-env"]
+          "presets": [
+            "@babel/preset-env"
+          ]
         }
       ],
       ".config/transforms/minify-super",
