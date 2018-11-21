@@ -14,6 +14,12 @@
   },
   "simplyimport": {
     "finalTransform": [
+      [
+        "babelify",
+        {
+          "presets": ["@babel/preset-env"]
+        }
+      ],
       ".config/transforms/minify-super",
       ".config/transforms/minify-rename",
       ".config/transforms/minify-simple"
@@ -58,6 +64,9 @@
   },
   "homepage": "https://github.com/danielkalen/quickcss#readme",
   "devDependencies": {
+    "@babel/core": "^7.1.6",
+    "@babel/preset-env": "^7.1.6",
+    "babelify": "^10.0.0",
     "bluebird": "^3.5.0",
     "chalk": "^2.0.1",
     "coffee-script": "^1.12.6",
@@ -65,7 +74,7 @@
     "fs-jetpack": "^0.13.3",
     "promise-break": "^0.1.1",
     "semver": "^5.3.0",
-    "simplyimport": "^4.0.5",
+    "simplyimport": "^4.0.9",
     "simplywatch": "^3.0.0"
   }
 }

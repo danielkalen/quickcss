@@ -180,7 +180,7 @@ compileJS = (file, options)->
 		.then ()-> require('simplyimport')(extend {file:file.src}, options)
 		.then (result)-> fs.writeAsync(file.dest, result)
 		.catch (err)->
-			console.error(err) if err not instanceof Error
+			console.error(err)
 			throw err
 
 

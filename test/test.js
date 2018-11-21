@@ -175,15 +175,15 @@ return quickcss(divs[0], 'height', '75px');
 test("quickcss.supports & quickcss.supportsProperty", function () {
 expect(typeof quickcss.supports).to.equal('function');
 expect(typeof quickcss.supportsProperty).to.equal('function');
-expect(quickcss.supports('display', 'inline')).to.be["true"];
-expect(quickcss.supports('display', 'block')).to.be["true"];
-expect(quickcss.supports('display', 'blockl')).to.be["false"];
-expect(quickcss.supports('display', '')).to.be["false"];
-expect(quickcss.supports('display', null)).to.be["false"];
-expect(quickcss.supports('opacity', '0.5')).to.be["true"];
-expect(quickcss.supports('opacity', 0.5)).to.be["true"];
-expect(quickcss.supportsProperty('opacity')).to.be["true"];
-return expect(quickcss.supportsProperty('opacityy')).to.be["false"];
+expect(quickcss.supports('display', 'inline')).to.be.true;
+expect(quickcss.supports('display', 'block')).to.be.true;
+expect(quickcss.supports('display', 'blockl')).to.be.false;
+expect(quickcss.supports('display', '')).to.be.false;
+expect(quickcss.supports('display', null)).to.be.false;
+expect(quickcss.supports('opacity', '0.5')).to.be.true;
+expect(quickcss.supports('opacity', 0.5)).to.be.true;
+expect(quickcss.supportsProperty('opacity')).to.be.true;
+return expect(quickcss.supportsProperty('opacityy')).to.be.false;
 });
 suite("animation", function () {
 test(".animation(name, keyframes) will create a @keyframes rule", function () {
@@ -268,7 +268,7 @@ width: '150px',
 expect(typeof className).to.equal('string');
 expect(quickcss(divs[0], 'width')).not.to.equal('150px');
 expect(quickcss(divs[0], 'marginTop')).not.to.equal('25px');
-divs[0].className += " " + className;
+divs[0].className += ` ${className}`;
 expect(quickcss(divs[0], 'width')).to.equal('150px');
 return expect(quickcss(divs[0], 'marginTop')).to.equal('25px');
 });
@@ -287,7 +287,7 @@ expect(quickcss(divs[0], 'height')).not.to.equal('70px');
 expect(quickcss(divs[0], 'marginTop')).not.to.equal('20px');
 expect(quickcss(divs[0], 'fontSize')).not.to.equal('20px');
 expect(quickcss(divs[0], 'zIndex')).not.to.equal('12');
-divs[0].className += " " + className;
+divs[0].className += ` ${className}`;
 expect(quickcss(divs[0], 'width')).to.equal('125px');
 expect(quickcss(divs[0], 'height')).to.equal('70px');
 expect(quickcss(divs[0], 'marginTop')).to.equal('20px');
@@ -307,7 +307,7 @@ return '2em';
 }),
 fontSize: '12'
 });
-inserted = (ref = (document.querySelector('#quickcss').textContent).match(new RegExp("\\." + className + " {(.+?)}"))) != null ? ref[1] : void 0;
+inserted = (ref = (document.querySelector('#quickcss').textContent).match(new RegExp(`\\.${className} {(.+?)}`))) != null ? ref[1] : void 0;
 expect(typeof inserted).to.equal('string');
 expect(inserted).to.include('width:20px');
 expect(inserted).to.include('opacity:0.5');
@@ -326,7 +326,7 @@ width: 30,
 height: '50'
 });
 expect(className1).to.equal(className2);
-match = (document.querySelector('#quickcss').textContent).match(new RegExp("" + className1, 'g'));
+match = (document.querySelector('#quickcss').textContent).match(new RegExp(`${className1}`, 'g'));
 return expect(match.length).to.equal(1);
 });
 test("styles can be registered at different levels for specificity (default=0)", function () {
@@ -339,10 +339,10 @@ className2 = quickcss.register({
 width: 20,
 height: 20
 });
-divs[0].className = "" + className1;
+divs[0].className = `${className1}`;
 expect(styles[0].width).to.equal('10px');
 expect(styles[0].height).to.equal('10px');
-divs[0].className += " " + className2;
+divs[0].className += ` ${className2}`;
 expect(styles[0].width).to.equal('20px');
 expect(styles[0].height).to.equal('20px');
 quickcss.register({
@@ -401,10 +401,10 @@ width: 25,
 height: 25
 }, 2);
 expect(className1).not.to.equal(className2);
-divs[0].className = className3 + " " + className4 + " " + className5;
+divs[0].className = `${className3} ${className4} ${className5}`;
 expect(styles[0].width).to.equal('50px');
 expect(styles[0].height).to.equal('25px');
-inserted = (ref = (document.querySelector('#quickcss').textContent).match(new RegExp("\\." + className2 + " {(.+?)}"))) != null ? ref[1] : void 0;
+inserted = (ref = (document.querySelector('#quickcss').textContent).match(new RegExp(`\\.${className2} {(.+?)}`))) != null ? ref[1] : void 0;
 return expect(inserted).to.include('!important');
 });
 test("clearing registered", function () {
