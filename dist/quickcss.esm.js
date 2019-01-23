@@ -10,9 +10,7 @@ function _typeof(obj) {
   }
 
   return _typeof(obj);
-}
-
-var REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
+}var REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
 var REGEX_DIGITS = /\d+$/;
 var REGEX_SPACE = /\s/;
 var REGEX_KEBAB = /([A-Z])+/g;
@@ -29,9 +27,7 @@ QUAD_SHORTHANDS.forEach(function (property) {
     direction = DIRECTIONS[i];
     REQUIRES_UNIT_VALUE.push(property + '-' + direction);
   }
-});
-
-var SAMPLE_STYLE, styleConfig;
+});var SAMPLE_STYLE, styleConfig;
 SAMPLE_STYLE = document.createElement('div').style;
 var includes = function includes(target, item) {
   return target && target.indexOf(item) !== -1;
@@ -185,11 +181,7 @@ var clearInlineStyle = function clearInlineStyle(level) {
       config.cache[key] = null;
     }
   }
-};
-
-var version = "1.4.1";
-
-var _quickcss;
+};var version = "1.4.1";var _quickcss;
 var index = _quickcss = function quickcss(targetEl, property, value, important) {
   var computedStyle, i, len, subEl, subProperty, subValue;
 
@@ -283,6 +275,4 @@ _quickcss.supports = isValueSupported;
 _quickcss.supportsProperty = isPropSupported;
 _quickcss.normalizeProperty = normalizeProperty;
 _quickcss.normalizeValue = normalizeValue;
-_quickcss.version = version;
-
-export default index;
+_quickcss.version = version;export default index;

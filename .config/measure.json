@@ -151,6 +151,16 @@
         "orig": "4.64KB",
         "gzip": "2.06KB"
       }
+    },
+    {
+      "debug": {
+        "orig": "28.79KB",
+        "gzip": "11.09KB"
+      },
+      "release": {
+        "orig": "8.39KB",
+        "gzip": "2.67KB"
+      }
     }
   ]
 }
