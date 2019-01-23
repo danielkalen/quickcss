@@ -110,7 +110,7 @@ task 'measure', (options)->
 		.then ()-> invoke 'install:measure'
 		.then ()->
 			DIR = if options.target then options.target else 'build'
-			measure {debug:"./#{DIR}/quickcss.debug.js", release:"./#{DIR}/quickcss.js"}
+			measure {debug:"./#{DIR}/quickcss.js", release:"./#{DIR}/quickcss.min.js"}
 
 
 
