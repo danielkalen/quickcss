@@ -7,6 +7,7 @@ fs = require 'fs-jetpack'
 chalk = require 'chalk'
 Path = require 'path'
 process.env.SOURCE_MAPS ?= 1
+cache = {}
 buildModules = ['google-closure-compiler-js','uglify-js@3.0.24']
 coverageModules = ['istanbul', 'badge-gen', 'coffee-coverage']
 testModules = [
@@ -17,7 +18,6 @@ testModules = [
 MEASURE_LOG = './.config/measure.json'
 PACKAGE = './package.json'
 
-option '-d', '--debug', 'run in debug mode'
 option '-t', '--target [target]', 'target measure dir'
 
 
@@ -29,18 +29,12 @@ task 'build', ()->
 
 
 task 'build:js', (options)->
-	debug = if options.debug then '.debug' else ''
-	Promise.resolve()
-		.then ()-> {src:"src/index.coffee", dest:"build/quickcss#{debug}.js"}
-		.tap ()-> console.log 'compiling js' unless global.silent
-		.then (file)-> compileJS(file, debug:options.debug, umd:'quickcss', target:'browser')
+	console.log 'bundling lib'
+	compileJS(require './.config/rollup.lib')
 
 task 'build:test', (options)->
-	Promise.resolve()
-		.then ()-> invoke 'install:test'
-		.tap ()-> console.log 'compiling test' unless global.silent
-		.then ()-> {src:"test/test.coffee", dest:"test/test.js"}
-		.then (file)-> compileJS(file, debug:options.debug, noPkgConfig:true)
+	console.log 'bundling test'
+	compileJS(require './.config/rollup.test')
 
 
 
@@ -53,16 +47,10 @@ task 'watch', ()->
 			invoke 'watch:test'
 
 task 'watch:js', (options)->
-	global.silent = true
-	require('simplywatch')
-		globs: "src/*.coffee"
-		command: -> invoke 'build:js'
+	require('rollup').watch(require './.config/rollup.lib')
 
 task 'watch:test', (options)->
-	global.silent = true
-	require('simplywatch')
-		globs: "test/*.coffee"
-		command: -> invoke 'build:test'
+	require('rollup').watch(require './.config/rollup.test')
 
 
 
@@ -175,13 +163,15 @@ measure = (file)->
 			console.log '\n'
 
 
-compileJS = (file, options)->
-	Promise.resolve()
-		.then ()-> require('simplyimport')(extend {file:file.src}, options)
-		.then (result)-> fs.writeAsync(file.dest, result)
-		.catch (err)->
-			console.error(err)
-			throw err
+compileJS = (configs)->
+	rollup = require 'rollup'
+
+	for config,i in configs
+		console.log "bundling config ##{i+1}"
+		bundle = await rollup.rollup(config)
+
+		for dest in config.output
+			await bundle.write(dest)
 
 
 

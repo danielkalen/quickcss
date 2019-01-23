@@ -1,5 +1,5 @@
 DIR = if process.env.CI then 'dist' else 'build'
-LIB_FILE = if process.env.minified then "#{DIR}/quickcss.js" else "#{DIR}/quickcss.debug.js"
+LIB_FILE = "#{DIR}/quickcss.js"
 
 module.exports = (config)-> config.set
 	basePath: '../'

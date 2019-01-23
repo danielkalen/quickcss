@@ -1,4 +1,4 @@
-(function(g,f){typeof exports==='object'&&typeof module!=='undefined'?module.exports=f():typeof define==='function'&&define.amd?define(f):(g=g||self,g.quickcss=f());}(this,function(){'use strict';function _typeof(obj) {
+function _typeof(obj) {
   if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
     _typeof = function (obj) {
       return typeof obj;
@@ -275,4 +275,4 @@ _quickcss.supports = isValueSupported;
 _quickcss.supportsProperty = isPropSupported;
 _quickcss.normalizeProperty = normalizeProperty;
 _quickcss.normalizeValue = normalizeValue;
-_quickcss.version = version;return index;}));
+_quickcss.version = version;export default index;
