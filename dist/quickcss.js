@@ -1,1 +1,296 @@
-function _typeof(t){return(_typeof="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t})(t)}(function(t){if(t=function(e,n,o){var r=function(r){if(!n[r])throw Error(r+" is not a module");return e[r]?e[r].exports:(e[r]={exports:{}},e[r].exports=n[r].call(o,t,e[r],e[r].exports))};return r.modules=n,r}({},{0:function(t,e,n){var o=t(1),r=t(2),i=function(t,e,n,c){switch(!1){case!o.iT(t):var a=0;for(c=t.length;a<c;a++){var u=t[a];i(u,e,n)}break;case"object"!==_typeof(e):for(a in e)n=e[a],i(t,a,n);break;default:if(e=o.normalizeProperty(e),void 0===n)return(t=t._computedStyle||(t._computedStyle=getComputedStyle(t)))[e];e&&t.style.setProperty(e,o.normalizeValue(e,n),c?r.IMPORTANT:void 0)}};return i.animation=function(t,e){var n;if(t&&"string"==typeof t&&e&&"object"===_typeof(e)){var r=o.gP("animation"),i="";for(n in e){var c=e[n];i+="".concat(n," {").concat(o.rS(c),"}")}return i="@".concat(r,"keyframes ").concat(t," {").concat(i,"}"),o.iS(i,!0,0)}},i.register=function(t,e,n){var r;if(t&&"object"===_typeof(t))return e||(e=0),t=o.rS(t,n),(n=null!=(r=o.iSConfig[e])?r[t]:void 0)||(n=o.hash(t),t=".".concat(n," {").concat(t,"}"),o.iS(t,n,e)),n},i.clearRegistered=function(t){return o.cI(t||0)},i.UNSET=function(){switch(!1){case!o.iV("display","unset"):return"unset";case!o.iV("display","initial"):return"initial";case!o.iV("display","inherit"):return"inherit"}}(),i.supports=o.iV,i.supportsProperty=o.iP,i.normalizeProperty=o.normalizeProperty,i.normalizeValue=o.normalizeValue,i.version="1.4.1",e.exports=i,e.exports},1:function(t,e,n){var o,r=t(2),i=document.createElement("div").style,c=n.ic=function(t,e){return t&&-1!==t.indexOf(e)};n.iT=function(t){return t&&"object"===_typeof(t)&&"number"==typeof t.length&&!t.nodeType};var a=n.tC=function(t){return t.replace(r.REGEX_KEBAB,function(t,e){return"-".concat(e.toLowerCase())})},u=n.iP=function(t){return void 0!==i[t]};n.iV=function(t,e){return window.CSS&&window.CSS.supports?window.CSS.supports(t,e):(i[t]=e,i[t]===""+e)};var f=n.gP=function(t,e){var n;if(e||!u(t))for(e=0,n=r.POSSIBLE_PREFIXES.length;e<n;e++){var o=r.POSSIBLE_PREFIXES[e];if(u("-".concat(o,"-").concat(t)))return"-".concat(o,"-")}return""},l=n.normalizeProperty=function(t){return t=a(t),u(t)?t:"".concat(f(t,!0)).concat(t)},s=n.normalizeValue=function(t,e){return c(r.REQUIRES_UNIT_VALUE,t)&&null!==e&&(e=""+e,!r.REGEX_DIGITS.test(e)||r.REGEX_LEN_VAL.test(e)||r.REGEX_SPACE.test(e)||(e+="line-height"===t?"em":"px")),e},p=n.sort=function h(t){var e;if(2>t.length)return t;var n=t[0],o=[],r=[],i=t.length;for(e=0;++e!==i;)t[e]<=n?o.push(t[e]):r.push(t[e]);return h(o).concat(n,h(r))};return n.hash=function(t){var e,n=5381;for(e=-1;++e!==t.length;)n=(n<<5)-n+t.charCodeAt(e),n|=0;return"_"+(0>n?-2*n:n)},n.rS=function(t,e){var n,o="",r=p(Object.keys(t)),i=0;for(n=r.length;i<n;i++){var c=r[i];if("string"==typeof t[c]||"number"==typeof t[c]){var a=l(c);c=s(a,t[c]),e&&(c+=" !important"),o+="".concat(a,":").concat(c,";")}}return o},n.iSConfig=o=Object.create(null),n.iS=function(t,e,n){var r;(r=o[n])||(r=document.createElement("style"),r.id="quickcss".concat(n||""),document.head.appendChild(r),o[n]=r={el:r,content:"",cache:Object.create(null)}),r.cache[t]||(r.cache[t]=e||!0,r.el.textContent=r.content+=t)},n.cI=function(t){var e,n;if((e=o[t])&&e.content){e.el.textContent=e.content="";var r=Object.keys(e.cache);for(t=0,n=r.length;t<n;t++){var i=r[t];e.cache[i]=null}}},e.exports},2:function(t,e,n){n.REGEX_LEN_VAL=/^\d+(?:[a-z]|\%)+$/i,n.REGEX_DIGITS=/\d+$/,n.REGEX_SPACE=/\s/,n.REGEX_KEBAB=/([A-Z])+/g,n.IMPORTANT="important",n.POSSIBLE_PREFIXES=["webkit","moz","ms","o"];var o=n.REQUIRES_UNIT_VALUE="background-position-x background-position-y block-size border-width columnRule-width cx cy font-size grid-column-gap grid-row-gap height inline-size line-height minBlock-size min-height min-inline-size min-width max-height max-width outline-offset outline-width perspective shape-margin stroke-dashoffset stroke-width text-indent width word-spacing top bottom left right x y".split(" ");t=n.QUAD_SHORTHANDS=["margin","padding","border","border-radius"];var r=n.DIRECTIONS=["top","bottom","left","right"];return t.forEach(function(t){var e;o.push(t);var n=0;for(e=r.length;n<e;n++){var i=r[n];o.push(t+"-"+i)}}),e.exports}},this),"function"==typeof define&&define.umd)define(function(){return t(0)});else{if("object"!==("undefined"==typeof module?"undefined":_typeof(module))||!module.exports)return this.quickcss=t(0);module.exports=t(0)}}).call(this,null);
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global = global || self, global.quickcss = factory());
+}(this, function () { 'use strict';
+
+  function _typeof(obj) {
+    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+      _typeof = function (obj) {
+        return typeof obj;
+      };
+    } else {
+      _typeof = function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+      };
+    }
+
+    return _typeof(obj);
+  }
+
+  var REGEX_LEN_VAL = /^\d+(?:[a-z]|\%)+$/i;
+  var REGEX_DIGITS = /\d+$/;
+  var REGEX_SPACE = /\s/;
+  var REGEX_KEBAB = /([A-Z])+/g;
+  var IMPORTANT = 'important';
+  var POSSIBLE_PREFIXES = ['webkit', 'moz', 'ms', 'o'];
+  var REQUIRES_UNIT_VALUE = ['background-position-x', 'background-position-y', 'block-size', 'border-width', 'columnRule-width', 'cx', 'cy', 'font-size', 'grid-column-gap', 'grid-row-gap', 'height', 'inline-size', 'line-height', 'minBlock-size', 'min-height', 'min-inline-size', 'min-width', 'max-height', 'max-width', 'outline-offset', 'outline-width', 'perspective', 'shape-margin', 'stroke-dashoffset', 'stroke-width', 'text-indent', 'width', 'word-spacing', 'top', 'bottom', 'left', 'right', 'x', 'y'];
+  var QUAD_SHORTHANDS = ['margin', 'padding', 'border', 'border-radius'];
+  var DIRECTIONS = ['top', 'bottom', 'left', 'right'];
+  QUAD_SHORTHANDS.forEach(function (property) {
+    var direction, i, len;
+    REQUIRES_UNIT_VALUE.push(property);
+
+    for (i = 0, len = DIRECTIONS.length; i < len; i++) {
+      direction = DIRECTIONS[i];
+      REQUIRES_UNIT_VALUE.push(property + '-' + direction);
+    }
+  });
+
+  var SAMPLE_STYLE, styleConfig;
+  SAMPLE_STYLE = document.createElement('div').style;
+  var includes = function includes(target, item) {
+    return target && target.indexOf(item) !== -1;
+  };
+  var isIterable = function isIterable(target) {
+    return target && _typeof(target) === 'object' && typeof target.length === 'number' && !target.nodeType;
+  };
+  var toKebabCase = function toKebabCase(string) {
+    return string.replace(REGEX_KEBAB, function (e, letter) {
+      return "-".concat(letter.toLowerCase());
+    });
+  };
+  var isPropSupported = function isPropSupported(property) {
+    return typeof SAMPLE_STYLE[property] !== 'undefined';
+  };
+  var isValueSupported = function isValueSupported(property, value) {
+    if (window.CSS && window.CSS.supports) {
+      return window.CSS.supports(property, value);
+    } else {
+      SAMPLE_STYLE[property] = value;
+      return SAMPLE_STYLE[property] === '' + value;
+    }
+  };
+  var getPrefix = function getPrefix(property, skipInitialCheck) {
+    var j, len1, prefix;
+
+    if (skipInitialCheck || !isPropSupported(property)) {
+      for (j = 0, len1 = POSSIBLE_PREFIXES.length; j < len1; j++) {
+        prefix = POSSIBLE_PREFIXES[j];
+
+        if (isPropSupported("-".concat(prefix, "-").concat(property))) {
+          /* istanbul ignore next */
+          return "-".concat(prefix, "-");
+        }
+      }
+    }
+
+    return '';
+  };
+  var normalizeProperty = function normalizeProperty(property) {
+    property = toKebabCase(property);
+
+    if (isPropSupported(property)) {
+      return property;
+    } else {
+      return "".concat(getPrefix(property, true)).concat(property);
+    }
+  };
+  var normalizeValue = function normalizeValue(property, value) {
+    if (includes(REQUIRES_UNIT_VALUE, property) && value !== null) {
+      value = '' + value;
+
+      if (REGEX_DIGITS.test(value) && !REGEX_LEN_VAL.test(value) && !REGEX_SPACE.test(value)) {
+        value += property === 'line-height' ? 'em' : 'px';
+      }
+    }
+
+    return value;
+  };
+  var sort = function sort(array) {
+    var great, i, len, less, pivot;
+
+    if (array.length < 2) {
+      return array;
+    } else {
+      pivot = array[0];
+      less = [];
+      great = [];
+      len = array.length;
+      i = 0;
+
+      while (++i !== len) {
+        if (array[i] <= pivot) {
+          less.push(array[i]);
+        } else {
+          great.push(array[i]);
+        }
+      }
+
+      return sort(less).concat(pivot, sort(great));
+    }
+  };
+  var hash = function hash(string) {
+    var hsh, i, length;
+    hsh = 5381;
+    i = -1;
+    length = string.length;
+
+    while (++i !== string.length) {
+      hsh = (hsh << 5) - hsh + string.charCodeAt(i);
+      hsh |= 0;
+    }
+
+    return '_' + (hsh < 0 ? hsh * -2 : hsh);
+  };
+  var ruleToString = function ruleToString(rule, important) {
+    var j, len1, output, prop, property, props, value;
+    output = '';
+    props = sort(Object.keys(rule));
+
+    for (j = 0, len1 = props.length; j < len1; j++) {
+      prop = props[j];
+
+      if (typeof rule[prop] === 'string' || typeof rule[prop] === 'number') {
+        property = normalizeProperty(prop);
+        value = normalizeValue(property, rule[prop]);
+
+        if (important) {
+          value += " !important";
+        }
+
+        output += "".concat(property, ":").concat(value, ";");
+      }
+    }
+
+    return output;
+  };
+  var inlineStyleConfig = styleConfig = Object.create(null);
+  var inlineStyle = function inlineStyle(rule, valueToStore, level) {
+    var config, styleEl;
+
+    if (!(config = styleConfig[level])) {
+      styleEl = document.createElement('style');
+      styleEl.id = "quickcss".concat(level || '');
+      document.head.appendChild(styleEl);
+      styleConfig[level] = config = {
+        el: styleEl,
+        content: '',
+        cache: Object.create(null)
+      };
+    }
+
+    if (!config.cache[rule]) {
+      config.cache[rule] = valueToStore || true;
+      config.el.textContent = config.content += rule;
+    }
+  };
+  var clearInlineStyle = function clearInlineStyle(level) {
+    var config, j, key, keys, len1;
+
+    if (config = styleConfig[level]) {
+      if (!config.content) {
+        return;
+      }
+
+      config.el.textContent = config.content = '';
+      keys = Object.keys(config.cache);
+
+      for (j = 0, len1 = keys.length; j < len1; j++) {
+        key = keys[j];
+        config.cache[key] = null;
+      }
+    }
+  };
+
+  var version = "1.4.1";
+
+  var _quickcss;
+  var index = _quickcss = function quickcss(targetEl, property, value, important) {
+    var computedStyle, i, len, subEl, subProperty, subValue;
+
+    switch (false) {
+      case !isIterable(targetEl):
+        for (i = 0, len = targetEl.length; i < len; i++) {
+          subEl = targetEl[i];
+
+          _quickcss(subEl, property, value);
+        }
+
+        break;
+
+      case _typeof(property) !== 'object':
+        // Passed a style map
+        for (subProperty in property) {
+          subValue = property[subProperty];
+
+          _quickcss(targetEl, subProperty, subValue);
+        }
+
+        break;
+
+      default:
+        property = normalizeProperty(property);
+
+        if (typeof value === 'undefined') {
+          computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
+          return computedStyle[property];
+        } else if (property) {
+          targetEl.style.setProperty(property, normalizeValue(property, value), important ? IMPORTANT : void 0);
+        }
+
+    }
+  };
+
+  _quickcss.animation = function (name$$1, frames) {
+    var frame, generated, prefix, rules;
+
+    if (name$$1 && typeof name$$1 === 'string' && frames && _typeof(frames) === 'object') {
+      prefix = getPrefix('animation');
+      generated = '';
+
+      for (frame in frames) {
+        rules = frames[frame];
+        generated += "".concat(frame, " {").concat(ruleToString(rules), "}");
+      }
+
+      generated = "@".concat(prefix, "keyframes ").concat(name$$1, " {").concat(generated, "}");
+      return inlineStyle(generated, true, 0);
+    }
+  };
+
+  _quickcss.register = function (rule, level, important) {
+    var className, ref, style;
+
+    if (rule && _typeof(rule) === 'object') {
+      level || (level = 0);
+      rule = ruleToString(rule, important);
+
+      if (!(className = (ref = inlineStyleConfig[level]) != null ? ref[rule] : void 0)) {
+        className = hash(rule);
+        style = ".".concat(className, " {").concat(rule, "}");
+        inlineStyle(style, className, level);
+      }
+
+      return className;
+    }
+  };
+
+  _quickcss.clearRegistered = function (level) {
+    return clearInlineStyle(level || 0);
+  };
+  /* istanbul ignore next */
+
+
+  _quickcss.UNSET = function () {
+    switch (false) {
+      case !isValueSupported('display', 'unset'):
+        return 'unset';
+
+      case !isValueSupported('display', 'initial'):
+        return 'initial';
+
+      case !isValueSupported('display', 'inherit'):
+        return 'inherit';
+    }
+  }();
+
+  _quickcss.supports = isValueSupported;
+  _quickcss.supportsProperty = isPropSupported;
+  _quickcss.normalizeProperty = normalizeProperty;
+  _quickcss.normalizeValue = normalizeValue;
+  _quickcss.version = version;
+
+  return index;
+
+}));

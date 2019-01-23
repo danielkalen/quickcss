@@ -1,7 +1,8 @@
 import * as helpers from './helpers'
+import {version} from '../package.json'
 import {IMPORTANT} from './constants'
 
-quickcss = (targetEl, property, value, important)->
+export default quickcss = (targetEl, property, value, important)->
 	switch
 		when helpers.isIterable(targetEl)
 			quickcss(subEl, property, value) for subEl in targetEl
@@ -58,7 +59,6 @@ quickcss.supports = helpers.isValueSupported
 quickcss.supportsProperty = helpers.isPropSupported
 quickcss.normalizeProperty = helpers.normalizeProperty
 quickcss.normalizeValue = helpers.normalizeValue
-quickcss.version = import '../package.json $ version'
+quickcss.version = version
 
 
-module.exports = quickcss

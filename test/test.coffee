@@ -1,6 +1,16 @@
-@quickcss = window.quickcss
-chai = import 'chai'
-chai.use(import 'chai-almost')
+import {
+	IMPORTANT,
+	REGEX_KEBAB,
+	REGEX_SPACE,
+	REGEX_DIGITS,
+	REGEX_LEN_VAL,
+	POSSIBLE_PREFIXES,
+	REQUIRES_UNIT_VALUE
+} from '../src/constants'
+
+import chai from 'chai'
+import chaiAlmost from 'chai-almost'
+chai.use(chaiAlmost)
 mocha.setup('tdd')
 mocha.slow(400)
 mocha.timeout(12000)
@@ -410,4 +420,3 @@ suite "QuickCss", ()->
 
 
 
-import '../src/constants'
