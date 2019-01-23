@@ -181,7 +181,7 @@ var clearInlineStyle = function clearInlineStyle(level) {
       config.cache[key] = null;
     }
   }
-};var version = "1.4.1";var _quickcss;
+};var version = "1.4.2";var _quickcss;
 var index = _quickcss = function quickcss(targetEl, property, value, important) {
   var computedStyle, i, len, subEl, subProperty, subValue;
 
