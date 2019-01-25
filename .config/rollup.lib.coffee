@@ -3,9 +3,18 @@ pkg.main = pkg.main.replace 'dist', 'build'
 pkg.module = pkg.module.replace 'dist', 'build'
 pkg.unpkg = pkg.unpkg.replace 'dist', 'build'
 
+
+onwarn = (warning, warn)->
+	return if warning.code is 'MISSING_GLOBAL_NAME'
+	return if warning.code is 'THIS_IS_UNDEFINED'
+	warn(warning)
+
+
 config = ({input, output, minify})->
 	input: input
 	output: [].concat(output).map (config)-> Object.assign {name:pkg.name, compact:true}, config
+	external: Object.keys(pkg.dependencies or {})
+	onwarn: onwarn
 	plugins: [
 		require('rollup-plugin-coffee-script')()
 		require('rollup-plugin-node-resolve')(

@@ -7,7 +7,7 @@ import {
 	POSSIBLE_PREFIXES,
 	REQUIRES_UNIT_VALUE
 } from '../src/constants'
-
+import quickcss from '../build/quickcss.esm.js'
 import chai from 'chai'
 import chaiAlmost from 'chai-almost'
 chai.use(chaiAlmost)

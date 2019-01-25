@@ -1,5 +1,5 @@
 DIR = if process.env.CI then 'dist' else 'build'
-LIB_FILE = "#{DIR}/quickcss.js"
+# LIB_FILE = "#{DIR}/quickcss.js"
 
 module.exports = (config)-> config.set
 	basePath: '../'
@@ -7,7 +7,7 @@ module.exports = (config)-> config.set
 	browserConsoleLogOptions: level:'log', terminal:true
 	frameworks: ['mocha']
 	files: [
-		LIB_FILE
+		# LIB_FILE
 		'node_modules/bluebird/js/browser/bluebird.js'
 		'node_modules/jquery/dist/jquery.min.js'
 		'test/test.js'
@@ -16,7 +16,7 @@ module.exports = (config)-> config.set
 		'**/*.git'
 	]
 
-	preprocessors: {"#{LIB_FILE}":'coverage'} if process.env.coverage
+	# preprocessors: {"#{LIB_FILE}":'coverage'} if process.env.coverage
 	reporters: do ()->
 		reporters = ['mocha']
 		reporters.push('coverage') if process.env.coverage
