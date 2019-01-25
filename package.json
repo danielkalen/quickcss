@@ -1,6 +1,6 @@
 {
   "name": "quickcss",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "⚡️-fast tiny CSS management tool sprinkled with API sugar",
   "main": "dist/quickcss.js",
   "module": "dist/quickcss.esm.js",
