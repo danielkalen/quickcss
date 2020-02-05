@@ -1,4 +1,6 @@
 function _typeof(obj) {
+  "@babel/helpers - typeof";
+
   if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
     _typeof = function (obj) {
       return typeof obj;
@@ -181,7 +183,7 @@ var clearInlineStyle = function clearInlineStyle(level) {
       config.cache[key] = null;
     }
   }
-};var version = "1.4.3";var _quickcss;
+};var version = "1.4.4";var _quickcss;
 var index = _quickcss = function quickcss(targetEl, property, value, important) {
   var computedStyle, i, len, subEl, subProperty, subValue;
 
@@ -212,16 +214,16 @@ var index = _quickcss = function quickcss(targetEl, property, value, important) 
         computedStyle = targetEl._computedStyle || (targetEl._computedStyle = getComputedStyle(targetEl));
         return computedStyle[property];
       } else if (property) {
-        targetEl.style.setProperty(property, normalizeValue(property, value), important ? IMPORTANT : void 0);
+        targetEl.style.setProperty(property, normalizeValue(property, value), important ? IMPORTANT : null);
       }
 
   }
 };
 
-_quickcss.animation = function (name$$1, frames) {
+_quickcss.animation = function (name, frames) {
   var frame, generated, prefix, rules;
 
-  if (name$$1 && typeof name$$1 === 'string' && frames && _typeof(frames) === 'object') {
+  if (name && typeof name === 'string' && frames && _typeof(frames) === 'object') {
     prefix = getPrefix('animation');
     generated = '';
 
@@ -230,7 +232,7 @@ _quickcss.animation = function (name$$1, frames) {
       generated += "".concat(frame, " {").concat(ruleToString(rules), "}");
     }
 
-    generated = "@".concat(prefix, "keyframes ").concat(name$$1, " {").concat(generated, "}");
+    generated = "@".concat(prefix, "keyframes ").concat(name, " {").concat(generated, "}");
     return inlineStyle(generated, true, 0);
   }
 };
