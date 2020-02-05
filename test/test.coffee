@@ -164,7 +164,7 @@ suite "QuickCss", ()->
 
 	test "!important flag will be set when truthy value will be passed as the 4th argument to QuickCss", ()->
 		resetDivs(true)
-		expect(divs[0].getAttribute 'style').to.equal ''
+		expect(divs[0].getAttribute 'style').to.oneOf ['', null]
 
 		quickcss(divs[0], 'width', '50px')
 		expect(divs[0].getAttribute 'style').to.include '50px'

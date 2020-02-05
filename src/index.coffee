@@ -17,7 +17,7 @@ export default quickcss = (targetEl, property, value, important)->
 				return computedStyle[property]
 			
 			else if property
-				targetEl.style.setProperty(property, helpers.normalizeValue(property, value), IMPORTANT if important)
+				targetEl.style.setProperty(property, helpers.normalizeValue(property, value), if important then IMPORTANT else null)
 
 	return
 
